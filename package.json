@@ -1,0 +1,15 @@
+{
+  "name": "AI",
+  "version": "1.0.0",
+  "description": "",
+  "main": "AI.js",
+  "bin": "AI.js",
+  "scripts": {
+    "start": "node ./AI.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "openai": "^3.2.1",
+  }
+}
