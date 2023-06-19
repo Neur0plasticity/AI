@@ -1,11 +1,11 @@
-// function main() {
-
-//     let hive = new Hive();
-
-//     hive.parse();
-//     hive.populate();
-
-// }
+'strict';
+`<script>eval(`;
+'strict';
+'npm install';
+'npm audit fix';
+`node -e `;
+// eval('
+// if (print) { module = {"exports":{}} }
 module.exports = class AI {
     /**
      * Built to be synchronous execution until unsupervised prompting is mastered.
@@ -887,7 +887,14 @@ function log(path, message){
 // main();
 
 
+// function main() {
 
+//     let hive = new Hive();
+
+//     hive.parse();
+//     hive.populate();
+
+// }
 
 
 
@@ -1001,3 +1008,5 @@ if (fileName === moduleName) {
 } else {
   console.log('The current file does not match the exported module:', moduleName);
 }
+
+`)</script>`;
