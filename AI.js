@@ -1,9 +1,8 @@
-'strict';
 `<script>eval(`;
 'strict';
 'npm install';
 'npm audit fix';
-`node -e `;
+'node -e ';
 // eval('
 // if (print) { module = {"exports":{}} }
 module.exports = class AI {
@@ -220,7 +219,8 @@ module.exports = class AI {
             // apiKey: "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"
             // apiKey: "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"
             // apiKey: "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"
-            apiKey: "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"
+            // apiKey: "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"
+            apiKey: "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",
         });
         // console.error("ERROR: NEED TO MAKE IT SO CLIENT SUBMITS OPENAI_API_KEY");
         const openai = new OpenAIApi(configuration);
@@ -232,17 +232,20 @@ module.exports = class AI {
             const response = await openai.listModels();
             return response;
         }
-        _this.chat = async function({model, prompt}) {
+        _this.chat = async function({model, messages=[], prompt}) {
             const models = [
                 "gpt-4",
                 "gpt-4-0314",
                 "gpt-4-32k",
                 "gpt-4-32k-0314",
                 "gpt-3.5-turbo",
-            ]
+            ];
             const completion = await openai.createChatCompletion({
                 model: model,
-                messages: [{role: "user", content: prompt}],
+                messages: [
+                    // ...messages,
+                    {role: "user", content: prompt}
+                ]
             });
             return completion;          
         }
@@ -377,9 +380,42 @@ module.exports = class AI {
             }
             return models.openaiModels;
         }
-    
         return _this;
     })();
+    executionenvironment(code){
+        const { exec } = require('child_process');
+        let language = "javascript";
+        let filename = "taskprogram";        
+        const commandMap = {
+        java: (filename, code)          => `java -cp . '${filename}.java'`,
+        python: (filename, code)        => `python -c '${code}'`,
+        javascript: (filename, code)    => `node -e '${code}'`,
+        c: (filename, code)             => `echo '${code}' | gcc -x c -o '${filename}' - && './${filename}'`,
+        "c++": (filename, code)         => `echo '${code}' | g++ -x c++ -o '${filename}' - && './${filename}'`,
+        "c#": (filename, code)          => `dotnet script -p '${filename}.csx'`,
+        ruby: (filename, code)          => `ruby -e '${code}'`,
+        php: (filename, code)           => `php -r '${code}'`,
+        swift: (filename, code)         => `swift -e '${code}'`,
+        go: (filename, code)            => `echo '${code}' | go run -`,
+        bash: (filename, code)          => `bash -c '${code}'`,
+        html: (filename, code)          => `echo '${code}' > '${filename}.html' && open -a 'Google Chrome' '${filename}.html'`,
+        powershell: (filename, code)    => `powershell -Command '${code}'`
+        };          
+        const command = commandMap[language](filename, code);
+        if (command) {
+          exec(command, (error, stdout, stderr) => {
+            if (error) {
+              console.error(`Error executing command: ${error.message}`);
+              return;
+            }
+            console.log(`Command output:\n\n\n${stdout}`);
+          })
+        } else {
+          console.log("Language not found in the list of popular programming languages.");
+        }
+    }
+    // Function to handle user input
+    catches = 0;
     constructor() {
         // this.ai = require("./AI")({});
         this.fs = require("fs");
@@ -403,15 +439,40 @@ module.exports = class AI {
         // }
         this.onEnvironment();
     }
-    onBrowser = ["Prompt"];
-    onNodeJS = ["getModels","chat","textCompletion","editImage", "variationImage", "createImage"];
+    // onBrowser = ["Prompt"];
+    // onNodeJS = ["getModels","chat","textCompletion","editImage", "variationImage", "createImage"];
     env = "onBrowser";
     onEnvironment(){
         this.isBrowser = typeof window !== 'undefined';
-        if (this.isBrowser) this.env = "onBrowser";
-        this.isNodejs = typeof process !== 'undefined' && process.versions && process.versions.node;
-        if (this.isNodejs) this.env = "onNodeJS";
-        this[this.env].forEach((key)=>{this[key] = this.methods[key];});
+        this.isNodeJS = typeof process !== 'undefined' && process.versions && process.versions.node && true;
+        if      (this.isBrowser)this.onBrowser();
+        else if (this.isNodeJS) this.onNodeJS();
+        else                    throw new Error("Environment not supported");
+    }
+    onBrowser(){
+        this.env = "browser";
+        const answer = prompt("Run AI on (console | gui)?");
+        if (answer === "console") {
+            this.isConsole = true;
+        } else if (answer === "gui") {
+            this.isGUI === true;
+        } else {
+            throw new Error();
+        }
+    }
+    onNodeJS(){
+        this.env = "nodejs";
+        const path = require('path');
+        const fileName = path.basename(process.argv[1]);
+        const service = process.argv[2];
+        const model = process.argv[3];
+        const exportedModule = require('./AI.js'); // Replace './mymodule' with the path to your module
+        const moduleName = path.basename('AI.js');
+        const sameModuleCalledAsMain = true;//exportedModule === moduleName;
+        this.isShell = sameModuleCalledAsMain && service && model && true;
+        this.isServer = sameModuleCalledAsMain && true;
+        this.server();
+        this.ui();
     }
     parse(){
         log(`./assistants/generated/0.__logs__/${this.logcnt++}.txt`, "started program");
@@ -555,7 +616,38 @@ module.exports = class AI {
     // }
 
     prompter = ["morpheus", "a-z"];
-
+    async onPrompt(response){
+        let result = `
+        achieve the prompts goal.
+        respond only in javascript. 
+        place all code in one block. 
+        console.log each task. 
+        ##prompt##
+        \n 
+        ` + response; //prompt; 
+        // this.prompts = Object.keys(this.prompts.everyprompt);
+        // let service = this.prompts.shift();
+        const service = process.argv[2];
+        const model = process.argv[3]; 
+        const max_tokens = 2048;
+        const temperature = 0.3;
+        console.log('service', service);
+        // console.log(this);
+        await this.methods[service]({model, result, max_tokens, temperature})
+        .then(this.onResponse)
+        .catch(this.autoDebug.bind(this));
+    }
+    onResponse(response){
+        this.onPrompt.bind(this)(response);
+        console.log('AI:', response);
+        this.executionenvironment(response);
+    }
+    autoDebug(error) {
+        console.error('Error:', error);
+        console.log("auto debug itself");
+        if (this.catches < 3) this.catches++, this.onPrompt(String(error));
+        else this.catches = 0;
+    }
     morpheusPrompt(){ // advanced goal oriented self modifying prompting
         /*
             Thank you for providing more context. Based on your description, 
@@ -620,16 +712,254 @@ module.exports = class AI {
             console.error(e);
         }
     }
+    ui(){
+        Just:if (this.isNodeJS && this.isShell)     this.ui_terminal();
+        else if (this.isNodeJS && this.isImported)  this.ui_terminal();
+        else if (this.isBrowser && this.isGUI)      this.ui_browser();
+        else if (this.isBrowser && this.isConsole)  this.ui_console();
+        else throw new Error("environment not supported");
+    }
+    ui_terminal(){
+        const readline = require('readline');
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+        console.log('Welcome to the AI Chat terminal!');
+        console.log();
+        console.log("tell me your goal");
+        rl.setPrompt('You: ');
+        rl.prompt();
+        // Listen for user input
+        rl.on('line', this.onPrompt.bind(this));
+    }
+    ui_console(){
+        console.log('Welcome to the AI Chat console!');
+        console.log();
+        console.log("tell me your goal");
+    }
+    ui_browser(){
+        this.render();
+    }
+    onSite(req, res, obj){
+        const thiscode = require("fs").readFileSync("./AI.js","utf8");
+        res.end(
+            `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <title>ChatGPT Web Component</title>
+              <style>
+                /* Styles for the chat container */
+                    #chat-container {
+                    width: 100%;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: #f2f2f2;
+                    border: 1px solid #ccc;
+                    border-radius: 5px;
+                    }
+            
+                    /* Styles for the chat messages */
+                    #chat-messages {
+                    margin-bottom: 20px;
+                    height: 200px;
+                    overflow-y: scroll;
+                    padding: 10px;
+                    background-color: #fff;
+                    border: 1px solid #ccc;
+                    border-radius: 5px;
+                    }
+            
+                    /* Styles for the user input */
+                    #user-input {
+                    width: 100%;
+                    margin-bottom: 10px;
+                    padding: 5px;
+                    border: 1px solid #ccc;
+                    border-radius: 3px;
+                    }
+            
+                    /* Styles for the submit button */
+                    #submit-btn {
+                    display: block;
+                    width: 100%;
+                    padding: 8px;
+                    background-color: #4caf50;
+                    color: #fff;
+                    border: none;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    }
+            
+                    /* Styles for chat messages */
+                    #chat-messages div {
+                    margin-bottom: 5px;
+                    }
+            
+                    /* Customized styles for user and AI messages */
+                    #chat-messages div:nth-child(odd) {
+                    color: #0099ff; /* User message color */
+                    }
+            
+                    #chat-messages div:nth-child(even) {
+                    color: #ff9900; /* AI message color */
+                    }
+            
+                    /* Styles for other API response */
+                    #chat-messages div:last-child {
+                    color: #555; /* Other API response color */
+                    }
+            
+              </style>
+            </head>
+            <body>
+              <div id="chat-container">
+                <div id="chat-messages"></div>
+                <textarea id="user-input" rows="10" maxlength="1000" placeholder="Command the AI"></textarea>
+                <button id="submit-btn">Submit</button>
+              </div>
+            
+              <script>
+                // Add your JavaScript code here
+                const chatContainer = document.getElementById('chat-container');
+                const chatMessages = document.getElementById('chat-messages');
+                const userInput = document.getElementById('user-input');
+                const submitBtn = document.getElementById('submit-btn');
+            
+                // ChatGPT API configuration
+                const chatGptApiEndpoint = 'YOUR_CHATGPT_API_ENDPOINT';
+                const chatGptApiKey = 'YOUR_CHATGPT_API_KEY';
+            
+                // Other API configuration
+                const otherApiEndpoint = 'OTHER_API_ENDPOINT';
+                const otherApiKey = 'OTHER_API_KEY';
+            
+                // Function to send a message to ChatGPT API
+                async function sendMessageToChatGpt(message) {
+                  const response = await fetch(chatGptApiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': 'Bearer ' + chatGptApiKey
+                    },
+                    body: JSON.stringify({
+                      message: message
+                    })
+                  });
+            
+                  const data = await response.json();
+                  return data.generated_code; // Modify this based on the response format from ChatGPT API
+                }
+            
+                // Function to access another API
+                async function accessOtherApi() {
+                  const response = await fetch(otherApiEndpoint, {
+                    headers: {
+                      'Authorization': 'Bearer ' + otherApiKey
+                    }
+                  });
+            
+                  const data = await response.json();
+                  return data; // Modify this based on the response format from the other API
+                }
+            
+                // Function to display a message in the chat
+                function displayMessage(message) {
+                  const messageElement = document.createElement('div');
+                  messageElement.textContent = message;
+                  chatMessages.appendChild(messageElement);
+                }
+            
+                // Event listener for submit button click
+                submitBtn.addEventListener('click', async function() {
+                  const userInputValue = userInput.value;
+                  displayMessage('User: ' + userInputValue);
+            
+                  // Send user message to ChatGPT API
+                  const generatedCode = await sendMessageToChatGpt(userInputValue);
+                  displayMessage('AI: ' + generatedCode);
+            
+                  // Access another API
+                  const otherApiResponse = await accessOtherApi();
+                  displayMessage('Other API Response: ' + JSON.stringify(otherApiResponse));
+            
+                  // Clear user input
+                  userInput.value = '';
+                });
+
+                // Function to adjust the row size of the user input textarea
+                function adjustUserInputRows() {
+                    const lines = userInput.value.split('\\n');
+                    userInput.rows = Math.min(lines.length, 10);
+                }
+                // Event listener for user input changes
+                userInput.addEventListener('input', adjustUserInputRows);
+              </script>
+            </body>
+            </html>
+            `
+        );
+    }
     router(z){
         return async (req, res) => {
             // this.currentTask
-
-
-
+            let controllers = {
+                "/": this.onSite.bind(this),
+                "/prompt": this.onPrompt.bind(this)
+            }
+            if (!controllers.hasOwnProperty(req.url)) {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ error: 'Route not found.' }));
+                return ;
+            }
+            if (req.method === 'GET' && req.url === '/') {
+                console.log("onsite");
+                this.onSite(req, res);
+            } else if (req.method === 'POST' && req.url === '/your-route') {
+                let requestBody = '';
+                req.on('data', (chunk) => {
+                    requestBody += chunk;
+                });
+                req.on('end', () => {
+                try {
+                    const { service, model, prompt } = JSON.parse(requestBody);
+                    // Access the values of service, model, and prompt here
+                    console.log('Service:', service);
+                    console.log('Model:', model);
+                    console.log('Prompt:', prompt);
+                    // Do something with the data...
+                    // this.onPrompt({service, model, prompt});
+                    controller(req, res, {service, model, prompt})
+                    const responseData = {
+                        message: airesponse,
+                    };
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    // res.end(JSON.stringify(responseData));
+                    res.end(res.out);
+                } catch (error) {
+                    res.statusCode = 400;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify({ error: 'Invalid request body.' }));
+                }
+                });
+            } else {
+                res.statusCode = 404;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ error: 'Route not found.' }));
+            }
         }
     }
+    server(){
+        const http = require('http');
+        const server = http.createServer(this.router({}));
+        server.listen(3000, () => {
+            console.log('http://localhost:3000');
+        });
+    }
 }
-
 
 const ChainOfCommand = ["Executive", "Directors", "Manager", "Specialists"];
 
@@ -734,7 +1064,6 @@ function parseDepartment(inputText) {
 function parseDepartment_computer(inputText) {
     return parseDepartment(inputText);
 }
-
 
 function createDirectory(profession){
     log(`./assistants/generated/0.__logs__/${this.logcnt++}.txt`, `creating profession directory: ${profession}`);
@@ -898,115 +1227,12 @@ function log(path, message){
 
 
 
-console.log("returning the module AI.")
 
-const path = require('path');
-// Get the name of the file initially called by the terminal
-const fileName = path.basename(process.argv[1]);
 
-const service = process.argv[2];
-
-const model = process.argv[3];
-
-// Get the exported module
-const exportedModule = require('./AI.js'); // Replace './mymodule' with the path to your module
-// Get the name of the exported module
-const moduleName = path.basename('AI.js');
-// Compare the file name with the module name
-if (fileName === moduleName) {
-    console.log('The current file matches the exported module:', moduleName);
-//   let ai = new AI({});
-//   const service = process.argv[2]
-//   const 
-//   ai.hasOwnProperty(service)
-    const readline = require('readline');
+if (module) {
+    console.log("returning the module AI.")
     const AI = require('./AI.js'); // Assuming the AI module is in a file named AI.js
-
-    const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
-    // Set up AI module
     const ai = new AI({});
-
-    // Function to send a message to the AI module
-    async function sendMessage(message) {
-        const response = await ai[service]({
-            model: model || "gpt-3.5-turbo",
-            prompt: message
-        });
-        // console.log('response', response);
-        return response.data.choices[0].message.content;
-    }
-
-    function executionenvironment(code){
-        const { exec } = require('child_process');
-        let language = "javascript";
-        let filename = "taskprogram";        
-        const commandMap = {
-        java: (filename, code)          => `java -cp . '${filename}.java'`,
-        python: (filename, code)        => `python -c '${code}'`,
-        javascript: (filename, code)    => `node -e '${code}'`,
-        c: (filename, code)             => `echo '${code}' | gcc -x c -o '${filename}' - && './${filename}'`,
-        "c++": (filename, code)         => `echo '${code}' | g++ -x c++ -o '${filename}' - && './${filename}'`,
-        "c#": (filename, code)          => `dotnet script -p '${filename}.csx'`,
-        ruby: (filename, code)          => `ruby -e '${code}'`,
-        php: (filename, code)           => `php -r '${code}'`,
-        swift: (filename, code)         => `swift -e '${code}'`,
-        go: (filename, code)            => `echo '${code}' | go run -`,
-        bash: (filename, code)          => `bash -c '${code}'`,
-        html: (filename, code)          => `echo '${code}' > '${filename}.html' && open -a 'Google Chrome' '${filename}.html'`,
-        powershell: (filename, code)    => `powershell -Command '${code}'`
-        };          
-        const command = commandMap[language](filename, code);
-        
-        if (command) {
-          exec(command, (error, stdout, stderr) => {
-            if (error) {
-              console.error(`Error executing command: ${error.message}`);
-              return;
-            }
-            console.log(`Command output:\n\n\n${stdout}`);
-          });
-        } else {
-          console.log("Language not found in the list of popular programming languages.");
-        }
-    }
-
-    // Function to handle user input
-
-    let catches = 0;
-
-    function handleInput(input) {
-        input = `
-            achieve the prompts goal.
-            respond only in javascript. 
-            place all code in one block. 
-            console.log each task. 
-            ##prompt##
-            \n 
-        ` + input;
-        sendMessage(input)
-            .then(response => {
-                console.log('AI:', response);   executionenvironment(response);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                console.log("auto debug itself");
-                if (catches < 3) catches++, handleInput(String(error));
-            });
-    }
-    // Start the conversation
-    console.log('Welcome to the AI Chat terminal!');
-    console.log();
-    console.log("tell me your goal");
-    rl.setPrompt('You: ');
-    rl.prompt();
-    // Listen for user input
-    rl.on('line', handleInput);
-} else {
-  console.log('The current file does not match the exported module:', moduleName);
+    // ai.ui();
 }
-
 `)</script>`;
