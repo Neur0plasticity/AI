@@ -744,163 +744,369 @@ module.exports = class AI {
     onSite(req, res, obj){
         const thiscode = require("fs").readFileSync("./AI.js","utf8");
         res.end(
-            `
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <title>ChatGPT Web Component</title>
-              <style>
-                /* Styles for the chat container */
-                    #chat-container {
-                    width: 100%;
-                    margin: 0 auto;
-                    padding: 20px;
-                    background-color: #f2f2f2;
-                    border: 1px solid #ccc;
-                    border-radius: 5px;
-                    }
-            
-                    /* Styles for the chat messages */
-                    #chat-messages {
-                    margin-bottom: 20px;
-                    height: 200px;
-                    overflow-y: scroll;
-                    padding: 10px;
-                    background-color: #fff;
-                    border: 1px solid #ccc;
-                    border-radius: 5px;
-                    }
-            
-                    /* Styles for the user input */
-                    #user-input {
-                    width: 100%;
-                    margin-bottom: 10px;
-                    padding: 5px;
-                    border: 1px solid #ccc;
-                    border-radius: 3px;
-                    }
-            
-                    /* Styles for the submit button */
-                    #submit-btn {
-                    display: block;
-                    width: 100%;
-                    padding: 8px;
-                    background-color: #4caf50;
-                    color: #fff;
-                    border: none;
-                    border-radius: 3px;
-                    cursor: pointer;
-                    }
-            
-                    /* Styles for chat messages */
-                    #chat-messages div {
-                    margin-bottom: 5px;
-                    }
-            
-                    /* Customized styles for user and AI messages */
-                    #chat-messages div:nth-child(odd) {
-                    color: #0099ff; /* User message color */
-                    }
-            
-                    #chat-messages div:nth-child(even) {
-                    color: #ff9900; /* AI message color */
-                    }
-            
-                    /* Styles for other API response */
-                    #chat-messages div:last-child {
-                    color: #555; /* Other API response color */
-                    }
-            
-              </style>
-            </head>
-            <body>
-              <div id="chat-container">
-                <div id="chat-messages"></div>
-                <textarea id="user-input" rows="10" maxlength="1000" placeholder="Command the AI"></textarea>
-                <button id="submit-btn">Submit</button>
-              </div>
-            
-              <script>
-                // Add your JavaScript code here
-                const chatContainer = document.getElementById('chat-container');
-                const chatMessages = document.getElementById('chat-messages');
-                const userInput = document.getElementById('user-input');
-                const submitBtn = document.getElementById('submit-btn');
-            
-                // ChatGPT API configuration
-                const chatGptApiEndpoint = 'YOUR_CHATGPT_API_ENDPOINT';
-                const chatGptApiKey = 'YOUR_CHATGPT_API_KEY';
-            
-                // Other API configuration
-                const otherApiEndpoint = 'OTHER_API_ENDPOINT';
-                const otherApiKey = 'OTHER_API_KEY';
-            
-                // Function to send a message to ChatGPT API
-                async function sendMessageToChatGpt(message) {
-                  const response = await fetch(chatGptApiEndpoint, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': 'Bearer ' + chatGptApiKey
-                    },
-                    body: JSON.stringify({
-                      message: message
-                    })
-                  });
-            
-                  const data = await response.json();
-                  return data.generated_code; // Modify this based on the response format from ChatGPT API
-                }
-            
-                // Function to access another API
-                async function accessOtherApi() {
-                  const response = await fetch(otherApiEndpoint, {
-                    headers: {
-                      'Authorization': 'Bearer ' + otherApiKey
-                    }
-                  });
-            
-                  const data = await response.json();
-                  return data; // Modify this based on the response format from the other API
-                }
-            
-                // Function to display a message in the chat
-                function displayMessage(message) {
-                  const messageElement = document.createElement('div');
-                  messageElement.textContent = message;
-                  chatMessages.appendChild(messageElement);
-                }
-            
-                // Event listener for submit button click
-                submitBtn.addEventListener('click', async function() {
-                  const userInputValue = userInput.value;
-                  displayMessage('User: ' + userInputValue);
-            
-                  // Send user message to ChatGPT API
-                  const generatedCode = await sendMessageToChatGpt(userInputValue);
-                  displayMessage('AI: ' + generatedCode);
-            
-                  // Access another API
-                  const otherApiResponse = await accessOtherApi();
-                  displayMessage('Other API Response: ' + JSON.stringify(otherApiResponse));
-            
-                  // Clear user input
-                  userInput.value = '';
-                });
-
-                // Function to adjust the row size of the user input textarea
-                function adjustUserInputRows() {
-                    const lines = userInput.value.split('\\n');
-                    userInput.rows = Math.min(lines.length, 10);
-                }
-                // Event listener for user input changes
-                userInput.addEventListener('input', adjustUserInputRows);
-              </script>
-            </body>
-            </html>
-            `
+            this.chatV1()
         );
     }
+    chatV0(){
+        return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>ChatGPT Web Component</title>
+          <style>
+            /* Styles for the chat container */
+                #chat-container {
+                width: 100%;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f2f2f2;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                display: flex;
+                flex-direction: column;
+                height: 100%; /* Adjust the overall height of the chat container as needed */                
+                }
+        
+                /* Styles for the chat messages */
+                #chat-messages {
+                margin-bottom: 20px;
+                height: 200px;
+                overflow-y: auto; /* Enable vertical scrolling */
+                padding: 10px;
+                background-color: #fff;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                height: 80%; /* 80% of the chat container height */
+                }
+        
+                /* Styles for the user input */
+                #instructions {
+                width: 100%;
+                margin-bottom: 10px;
+                padding: 5px;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+                height: 20%; /* 20% of the chat container height */
+                }
+        
+                /* Styles for the submit button */
+                #submit-btn {
+                display: block;
+                width: 100%;
+                padding: 8px;
+                background-color: #4caf50;
+                color: #fff;
+                border: none;
+                border-radius: 3px;
+                cursor: pointer;
+                }
+        
+                /* Styles for chat messages */
+                #chat-messages div {
+                margin-bottom: 5px;
+                }
+        
+                /* Customized styles for user and AI messages */
+                #chat-messages div:nth-child(odd) {
+                color: #0099ff; /* User message color */
+                }
+        
+                #chat-messages div:nth-child(even) {
+                color: #ff9900; /* AI message color */
+                }
+        
+                /* Styles for other API response */
+                #chat-messages div:last-child {
+                color: #555; /* Other API response color */
+                }
+        
+          </style>
+        </head>
+        <body>
+          <div id="chat-container">
+            <div id="chat-messages"></div>
+            <textarea id="instructions" rows="10" maxlength="1000" placeholder="Command the AI"></textarea>
+            <button id="submit-btn">Submit</button>
+          </div>
+        
+          <script>
+            // Add your JavaScript code here
+            const chatContainer = document.getElementById('chat-container');
+            const chatMessages = document.getElementById('chat-messages');
+            const userInput = document.getElementById('instructions');
+            const submitBtn = document.getElementById('submit-btn');
+        
+            // ChatGPT API configuration
+            const chatGptApiEndpoint = 'YOUR_CHATGPT_API_ENDPOINT';
+            const chatGptApiKey = 'YOUR_CHATGPT_API_KEY';
+        
+            // Other API configuration
+            const otherApiEndpoint = 'OTHER_API_ENDPOINT';
+            const otherApiKey = 'OTHER_API_KEY';
+        
+            const submitMessage = async function() {
+                const userInputValue = userInput.value;
+                displayMessage('User: ' + userInputValue);
+          
+                // Send user message to ChatGPT API
+                const generatedCode = await sendMessageToChatGpt(userInputValue);
+                displayMessage('AI: ' + generatedCode);
+          
+                // Access another API
+                const otherApiResponse = await accessOtherApi();
+                displayMessage('Other API Response: ' + JSON.stringify(otherApiResponse));
+          
+                // Clear user input
+                userInput.value = '';
+            }
+
+            // Function to send a message to ChatGPT API
+            async function sendMessageToChatGpt(message) {
+              const response = await fetch(chatGptApiEndpoint, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + chatGptApiKey
+                },
+                body: JSON.stringify({
+                  message: message
+                })
+              });
+        
+              const data = await response.json();
+              return data.generated_code; // Modify this based on the response format from ChatGPT API
+            }
+        
+            // Function to access another API
+            async function accessOtherApi() {
+              const response = await fetch(otherApiEndpoint, {
+                headers: {
+                  'Authorization': 'Bearer ' + otherApiKey
+                }
+              });
+        
+              const data = await response.json();
+              return data; // Modify this based on the response format from the other API
+            }
+        
+            // Function to display a message in the chat
+            function displayMessage(message) {
+              const messageElement = document.createElement('div');
+              messageElement.textContent = message;
+              chatMessages.appendChild(messageElement);
+            }
+        
+            // Event listener for submit button click
+            submitBtn.addEventListener('click', submitMessage);
+
+            // Function to adjust the row size of the user input textarea
+            function adjustUserInputRows() {
+                const lines = userInput.value.split('\\n');
+                userInput.rows = Math.min(lines.length, 10);
+            }
+            // Event listener for user input changes
+            userInput.addEventListener('input', adjustUserInputRows);
+
+            // Event listener for user input changes
+            userInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault(); // Prevent the textarea from inserting a new line
+                submitMessage();
+            }
+            });
+          </script>
+        </body>
+        </html>
+        `
+    }
+    chatV1(){
+        return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>ChatGPT Web Component</title>
+          <style>
+            /* Styles for the chat container */
+                #chat-container {
+                width: 100%;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f2f2f2;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                display: flex;
+                flex-direction: column;
+                height: 100%; /* Adjust the overall height of the chat container as needed */                
+                }
+        
+                /* Styles for the chat messages */
+                #chat-messages {
+                margin-bottom: 20px;
+                height: 200px;
+                overflow-y: auto; /* Enable vertical scrolling */
+                padding: 10px;
+                background-color: #fff;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                height: 80%; /* 80% of the chat container height */
+                }
+        
+                /* Styles for the user input */
+                #instructions {
+                width: 100%;
+                margin-bottom: 10px;
+                padding: 5px;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+                height: 20%; /* 20% of the chat container height */
+                }
+        
+                /* Styles for the submit button */
+                #submit-btn {
+                display: block;
+                width: 100%;
+                padding: 8px;
+                background-color: #4caf50;
+                color: #fff;
+                border: none;
+                border-radius: 3px;
+                cursor: pointer;
+                }
+        
+                /* Styles for chat messages */
+                #chat-messages div {
+                margin-bottom: 5px;
+                }
+        
+                /* Customized styles for user and AI messages */
+                #chat-messages div:nth-child(odd) {
+                color: #0099ff; /* User message color */
+                }
+        
+                #chat-messages div:nth-child(even) {
+                color: #ff9900; /* AI message color */
+                }
+        
+                /* Styles for other API response */
+                #chat-messages div:last-child {
+                color: #555; /* Other API response color */
+                }
+        
+          </style>
+        </head>
+        <body>
+          <div id="chat-container">
+            <div id="chat-messages"></div>
+            <textarea id="instructions" rows="10" maxlength="8000" placeholder="Command the AI"></textarea>
+            <textarea id="context-input" rows="10" maxlength="8000" placeholder="Enter context here"></textarea>
+            <textarea id="response-format" rows="10" maxlength="8000" placeholder="Enter response format here"></textarea>
+            <button id="submit-btn">Submit</button>
+          </div>
+        
+          <script>
+            // Add your JavaScript code here
+            const chatContainer = document.getElementById('chat-container');
+            const chatMessages = document.getElementById('chat-messages');
+            const userInput = document.getElementById('instructions');
+            const contextInput = document.getElementById('context-input');
+            const formatInput = document.getElementById('response-format');
+            const submitBtn = document.getElementById('submit-btn');
+        
+            // ChatGPT API configuration
+            const chatGptApiEndpoint = 'YOUR_CHATGPT_API_ENDPOINT';
+            const chatGptApiKey = 'YOUR_CHATGPT_API_KEY';
+        
+            // Other API configuration
+            const otherApiEndpoint = 'OTHER_API_ENDPOINT';
+            const otherApiKey = 'OTHER_API_KEY';
+        
+            const submitMessage = async function() {
+                const userInputValue = userInput.value;
+                displayMessage('User: ' + userInputValue);
+
+                const contextValue = contextInput.value;
+                displayMessage('Context: ' + contextValue);
+
+                const formatValue = formatInput.value;
+                displayMessage('Format: ' + formatValue);
+
+                const message = \`userInputValue + "\n" + contextValue\ + "\n"\`          
+                // Send user message to ChatGPT API
+                const generatedCode = await sendMessageToChatGpt(userInputValue);
+                displayMessage('AI: ' + generatedCode);
+          
+                // Access another API
+                const otherApiResponse = await accessOtherApi();
+                displayMessage('Other API Response: ' + JSON.stringify(otherApiResponse));
+          
+                // Clear user input
+                userInput.value = '';
+            }   
+
+            // Function to send a message to ChatGPT API
+            //async function sendMessageToChatGpt(message) {
+            //   const response = await fetch(chatGptApiEndpoint, {
+            //     method: 'POST',
+            //     headers: {
+            //       'Content-Type': 'application/json',
+            //       'Authorization': 'Bearer ' + chatGptApiKey
+            //     },
+            //     body: JSON.stringify({
+            //       message: message
+            //     })
+            //   });
+        
+            //   const data = await response.json();
+            //   return data.generated_code; // Modify this based on the response format from ChatGPT API
+            const Prompt = ${
+                this.methods.Prompt.toString()
+            }
+            const sendMessageToChatGpt = (message)=>{
+                Prompt('chat', message, 'gpt-3.5-turbo')
+            }
+            // Function to access another API
+            async function accessOtherApi() {
+              const response = await fetch(otherApiEndpoint, {
+                headers: {
+                  'Authorization': 'Bearer ' + otherApiKey
+                }
+              });
+        
+              const data = await response.json();
+              return data; // Modify this based on the response format from the other API
+            }
+        
+            // Function to display a message in the chat
+            function displayMessage(message) {
+              const messageElement = document.createElement('div');
+              messageElement.textContent = message;
+              chatMessages.appendChild(messageElement);
+            }
+        
+            // Event listener for submit button click
+            submitBtn.addEventListener('click', submitMessage);
+
+            // Function to adjust the row size of the user input textarea
+            function adjustUserInputRows() {
+                const lines = userInput.value.split('\\n');
+                userInput.rows = Math.min(lines.length, 10);
+            }
+            // Event listener for user input changes
+            userInput.addEventListener('input', adjustUserInputRows);
+
+            // Event listener for user input changes
+            userInput.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault(); // Prevent the textarea from inserting a new line
+                submitMessage();
+            }
+            });
+          </script>
+        </body>
+        </html>
+        `
+    }
+
     router(z){
         return async (req, res) => {
             // this.currentTask
