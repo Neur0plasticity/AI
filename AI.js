@@ -184,14 +184,17 @@ module.exports = class AI {
     methods = (function() {
         let _this = {};
         _this.Prompt = async function(service, prompt, model){
-            const queryParams = new URLSearchParams({
-                action:service, 
-                model: model || "gpt-3.5-turbo",
-            });
-            const url = `/prompt?${queryParams}`;
+            // const queryParams = new URLSearchParams({
+            //     action:service, 
+            //     model: model || "gpt-3.5-turbo",
+            // });
+            const url = `/prompt`//?${queryParams}`;
             const data = {
                 prompt,
                 // apiKey,
+                action: "prompt", 
+                service,
+                model,
             };
             return fetch(url, {
                 method: 'POST',
@@ -216,11 +219,7 @@ module.exports = class AI {
         console.log(Configuration)
         const configuration = new Configuration({
             // apiKey: process.env.OPENAI_API_KEY,
-            // apiKey: "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"
-            // apiKey: "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"
-            // apiKey: "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"
-            // apiKey: "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"
-            apiKey: "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",
+            apiKey: "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",
         });
         // console.error("ERROR: NEED TO MAKE IT SO CLIENT SUBMITS OPENAI_API_KEY");
         const openai = new OpenAIApi(configuration);
@@ -385,11 +384,12 @@ module.exports = class AI {
     executionenvironment(code){
         const { exec } = require('child_process');
         let language = "javascript";
-        let filename = "taskprogram";        
+        let filename = "taskprogram";
+        require("fs").writeFileSync('./'+filename + '.js', code);
         const commandMap = {
         java: (filename, code)          => `java -cp . '${filename}.java'`,
         python: (filename, code)        => `python -c '${code}'`,
-        javascript: (filename, code)    => `node -e '${code}'`,
+        javascript: (filename, code)    => `node ./${filename}.js`,
         c: (filename, code)             => `echo '${code}' | gcc -x c -o '${filename}' - && './${filename}'`,
         "c++": (filename, code)         => `echo '${code}' | g++ -x c++ -o '${filename}' - && './${filename}'`,
         "c#": (filename, code)          => `dotnet script -p '${filename}.csx'`,
@@ -408,8 +408,10 @@ module.exports = class AI {
               console.error(`Error executing command: ${error.message}`);
               return;
             }
-            console.log(`Command output:\n\n\n${stdout}`);
+            console.log(stdout);
+            console.log(`#`.repeat(9))
           })
+            // eval(require("fs").writeFileSync('./'+filename + '.js', "utf8"))
         } else {
           console.log("Language not found in the list of popular programming languages.");
         }
@@ -452,13 +454,10 @@ module.exports = class AI {
     onBrowser(){
         this.env = "browser";
         const answer = prompt("Run AI on (console | gui)?");
-        if (answer === "console") {
-            this.isConsole = true;
-        } else if (answer === "gui") {
-            this.isGUI === true;
-        } else {
-            throw new Error();
-        }
+        only: if (answer === "extension")   this.isExtension = true;
+        else if (answer === "console")      this.isConsole = true;
+        else if (answer === "gui")          this.isGUI === true;
+        else throw new Error();
     }
     onNodeJS(){
         this.env = "nodejs";
@@ -617,9 +616,9 @@ module.exports = class AI {
 
     prompter = ["morpheus", "a-z"];
     async onPrompt(response){
-        let result = `
+        const prompt = `
         achieve the prompts goal.
-        respond only in javascript. 
+        respond only in nodejs. 
         place all code in one block. 
         console.log each task. 
         ##prompt##
@@ -633,14 +632,18 @@ module.exports = class AI {
         const temperature = 0.3;
         console.log('service', service);
         // console.log(this);
-        await this.methods[service]({model, result, max_tokens, temperature})
-        .then(this.onResponse)
+        await this.methods[service]({model, prompt, max_tokens, temperature})
+        .then(this.onResponse.bind(this))
         .catch(this.autoDebug.bind(this));
     }
     onResponse(response){
-        this.onPrompt.bind(this)(response);
-        console.log('AI:', response);
-        this.executionenvironment(response);
+        // this.onPrompt.bind(this)(response);
+        const gptreply = response.data.choices[0].text;
+        console.log(`################################\n`.repeat(2))
+        console.log(gptreply);
+        console.log(`################################\n`.repeat(2))
+        console.log();
+        this.executionenvironment(gptreply);
     }
     autoDebug(error) {
         console.error('Error:', error);
@@ -717,6 +720,7 @@ module.exports = class AI {
         else if (this.isNodeJS && this.isImported)  this.ui_terminal();
         else if (this.isBrowser && this.isGUI)      this.ui_browser();
         else if (this.isBrowser && this.isConsole)  this.ui_console();
+        else if (this.isBrowser && this.isExtension)this.ui_extension();
         else throw new Error("environment not supported");
     }
     ui_terminal(){
@@ -725,7 +729,7 @@ module.exports = class AI {
             input: process.stdin,
             output: process.stdout
         });
-        console.log('Welcome to the AI Chat terminal!');
+        console.log('Welcome to your AI CoPilot');
         console.log();
         console.log("tell me your goal");
         rl.setPrompt('You: ');
@@ -741,12 +745,186 @@ module.exports = class AI {
     ui_browser(){
         this.render();
     }
+    ui_extension(){
+        console.log("ui_extension");
+        if (chrome) {}
+        if (edge) {}
+        if (firefox) {}
+        if (safari) {}
+    }
     onSite(req, res, obj){
         const thiscode = require("fs").readFileSync("./AI.js","utf8");
         res.end(
-            this.chatV1()
+            // this.chatV1()
+            // this.windowsV0()
+            this.windowsV2()
         );
     }
+    windowsV0(){
+        const html = `
+            <style>
+                .row {
+                    display: flex;
+                    flex-direction: row;
+                }
+                .column {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .assistants {
+                    width: 15%;
+                    background-color: lightblue;
+                }
+                .chat {
+                    width: 70%;
+                    background-color: lightgreen;
+                }
+                .conversations {
+                    width: 15%;
+                    background-color: lightyellow;
+                }
+            </style>
+            <script>
+                class List {
+                    constructor(title) {
+                    this.title = title;
+                    }
+                }
+                function insert(listname) {
+                    const _List = document.getElementById(listname+'-list');
+                    const listItem = document.createElement('li');
+                    const list = new List("New " +listname);
+                    listItem.textContent = list.title;
+                    _List.appendChild(listItem);
+                    // Save list to local storage
+                    const _ = JSON.parse(localStorage.getItem(listname)) || [];
+                    _.push(listname);
+                    localStorage.setItem(listname, JSON.stringify(_));
+                  }
+                  function delete_(listname) {
+                    const _List = document.getElementById(listname+'-list');
+                    if (_List.firstChild) {
+                      _List.removeChild(_List.firstChild);
+                      // Remove _ from local storage
+                      const _ = JSON.parse(localStorage.getItem(listname)) || [];
+                      _.pop();
+                      localStorage.setItem(listname, JSON.stringify(_));
+                    }
+                  }
+                  function load(listname) {
+                    const _List = document.getElementById(listname+'-list');
+                    _List.innerHTML = ''; // Clear existing list
+                    // Load list from local storage
+                    const _ = JSON.parse(localStorage.getItem(listname+'L')) || [];
+                    _.forEach(listname => {
+                      const listItem = document.createElement('li');
+                      listItem.textContent = listname.title;
+                      _List.appendChild(listItem);
+                    });
+                  }
+            </script>
+            <div class="row">
+                <div class="column conversations">${this.conversationsV0()}</div>
+                <div class="column chat">${this.chatV1()}</div>
+                <div class="column assistants">${this.assistantsV0()}</div>
+            </div>`;
+        return html;
+    }
+    windowsV1() {
+        const html = `<div class="row">
+            <div class="row">
+            <div class="column conversations">${this.conversationsV0()}</div>
+            <div class="column chat">${this.chatV1()}</div>
+            <div class="column assistants">${this.assistantsV0()}</div>
+        </div>`;
+    }
+    windowsV2() {
+        const html = `
+        <style>
+            .row {
+                display: flex;
+                flex-direction: row;
+            }
+            .column {
+                display: flex;
+                flex-direction: column;
+            }
+            .assistants {
+                width: 15%;
+                background-color: lightblue;
+            }
+            .chat {
+                width: 70%;
+                background-color: lightgreen;
+            }
+            .conversations {
+                width: 15%;
+                background-color: lightyellow;
+            }
+        </style>
+        <script>
+            class List {
+                constructor(title) {
+                this.title = title;
+                }
+            }
+            function insert(listname) {
+                const _List = document.getElementById(listname+'-list');
+                const listItem = document.createElement('li');
+                const list = new List("New " +listname);
+                listItem.textContent = list.title;
+                _List.appendChild(listItem);
+                // Save list to local storage
+                const _ = JSON.parse(localStorage.getItem(listname)) || [];
+                _.push(listname);
+                localStorage.setItem(listname, JSON.stringify(_));
+            }
+            function delete_(listname) {
+                const _List = document.getElementById(listname+'-list');
+                if (_List.firstChild) {
+                _List.removeChild(_List.firstChild);
+                // Remove _ from local storage
+                const _ = JSON.parse(localStorage.getItem(listname)) || [];
+                _.pop();
+                localStorage.setItem(listname, JSON.stringify(_));
+                }
+            }
+            function load(listname) {
+                const _List = document.getElementById(listname+'-list');
+                _List.innerHTML = ''; // Clear existing list
+                // Load list from local storage
+                const _ = JSON.parse(localStorage.getItem(listname+'L')) || [];
+                _.forEach(listname => {
+                const listItem = document.createElement('li');
+                listItem.textContent = listname.title;
+                _List.appendChild(listItem);
+                });
+            }
+        </script>
+        <div class="row">
+            <div class="column conversations">${this.conversationsV0()}</div>
+            <div class="column chat">${this.chatV2()}</div>
+            <div class="column assistants">${this.assistantsV0()}</div>
+        </div>`;
+        return html;
+    }
+    assistantsV0() {
+        return this.listV0("Assistant");
+    }
+    conversationsV0() {
+        return this.listV0("Conversation");
+    }
+    listV0(listname) {
+        return `
+              <h3><center>${listname}</center></h3>
+              <button onclick="insert()">Insert</button>
+              <button onclick="delete_()">Delete</button>
+              <ul id="${listname}-list"></ul>
+              <script>
+                load("${listname}");
+              </script>
+        `;
+    }     
     chatV0(){
         return `
         <!DOCTYPE html>
@@ -834,7 +1012,7 @@ module.exports = class AI {
             const chatContainer = document.getElementById('chat-container');
             const chatMessages = document.getElementById('chat-messages');
             const userInput = document.getElementById('instructions');
-            const submitBtn = document.getElementById('submit-btn');
+            // const submitBtn = document.getElementById('submit-btn');
         
             // ChatGPT API configuration
             const chatGptApiEndpoint = 'YOUR_CHATGPT_API_ENDPOINT';
@@ -897,7 +1075,7 @@ module.exports = class AI {
             }
         
             // Event listener for submit button click
-            submitBtn.addEventListener('click', submitMessage);
+            // submitBtn.addEventListener('click', submitMessage);
 
             // Function to adjust the row size of the user input textarea
             function adjustUserInputRows() {
@@ -921,12 +1099,12 @@ module.exports = class AI {
     }
     chatV1(){
         return `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>ChatGPT Web Component</title>
-          <style>
-            /* Styles for the chat container */
+            <!DOCTYPE html>
+            <html>
+            <head>
+            <title>ChatGPT Web Component</title>
+            <style>
+                /* Styles for the chat container */
                 #chat-container {
                 width: 100%;
                 margin: 0 auto;
@@ -938,7 +1116,6 @@ module.exports = class AI {
                 flex-direction: column;
                 height: 100%; /* Adjust the overall height of the chat container as needed */                
                 }
-        
                 /* Styles for the chat messages */
                 #chat-messages {
                 margin-bottom: 20px;
@@ -950,7 +1127,7 @@ module.exports = class AI {
                 border-radius: 5px;
                 height: 80%; /* 80% of the chat container height */
                 }
-        
+            
                 /* Styles for the user input */
                 #instructions {
                 width: 100%;
@@ -960,7 +1137,7 @@ module.exports = class AI {
                 border-radius: 3px;
                 height: 20%; /* 20% of the chat container height */
                 }
-        
+            
                 /* Styles for the submit button */
                 #submit-btn {
                 display: block;
@@ -972,94 +1149,256 @@ module.exports = class AI {
                 border-radius: 3px;
                 cursor: pointer;
                 }
-        
+            
                 /* Styles for chat messages */
                 #chat-messages div {
                 margin-bottom: 5px;
                 }
-        
+            
                 /* Customized styles for user and AI messages */
                 #chat-messages div:nth-child(odd) {
                 color: #0099ff; /* User message color */
                 }
-        
+            
                 #chat-messages div:nth-child(even) {
                 color: #ff9900; /* AI message color */
                 }
-        
+            
                 /* Styles for other API response */
                 #chat-messages div:last-child {
                 color: #555; /* Other API response color */
                 }
+            </style>
+            </head>
+            <body>
+            <div id="chat-container">
+                <div id="chat-messages"></div>
+                <textarea id="instructions" rows="10" maxlength="8000" placeholder="Command the AI"></textarea>
+                <textarea id="context-input" rows="10" maxlength="8000" placeholder="Enter context here"></textarea>
+                <textarea id="response-format" rows="10" maxlength="8000" placeholder="Enter response format here"></textarea>
+                <button id="submit-btn">Submit</button>
+            </div>
+            
+            <script>
+                // Add your JavaScript code here
+                const chatContainer = document.getElementById('chat-container');
+                const chatMessages = document.getElementById('chat-messages');
+                const userInput = document.getElementById('instructions');
+                const contextInput = document.getElementById('context-input');
+                const formatInput = document.getElementById('response-format');
+                // const submitBtn = document.getElementById('submit-btn');
+            
+                // ChatGPT API configuration
+                const chatGptApiEndpoint = 'YOUR_CHATGPT_API_ENDPOINT';
+                const chatGptApiKey = 'YOUR_CHATGPT_API_KEY';
+            
+                // Other API configuration
+                const otherApiEndpoint = 'OTHER_API_ENDPOINT';
+                const otherApiKey = 'OTHER_API_KEY';
+            
+                const submitMessage = async function() {
+                
+                const userInputValue = userInput.value;
+                displayMessage('User: ' + userInputValue);
+            
+                const contextValue = contextInput.value;
+                displayMessage('Context: ' + contextValue);
+                const formatValue = formatInput.value;
+                displayMessage('Format: ' + formatValue);
+                
+                const message = \`\${userInputValue}\n\${contextValue}\n\${formatValue}\n\`;          
+                // Send user message to ChatGPT API
+                const generatedCode = await sendMessageToChatGpt(message);
+                displayMessage('AI: ' + generatedCode);
+                
+                // Access another API
+                const otherApiResponse = await accessOtherApi();
+                displayMessage('Other API Response: ' + JSON.stringify(otherApiResponse));
+                
+                // Clear user input
+                userInput.value = '';
+                contextInput.value = '';
+                // response format stays
+                }   
+                
+                // Function to send a message to ChatGPT API
+                //async function sendMessageToChatGpt(message) {
+                //   const response = await fetch(chatGptApiEndpoint, {
+                //     method: 'POST',
+                //     headers: {
+                //       'Content-Type': 'application/json',
+                //       'Authorization': 'Bearer ' + chatGptApiKey
+                //     },
+                //     body: JSON.stringify({
+                //       message: message
+                //     })
+                //   });
+                
+                //   const data = await response.json();
+                //   return data.generated_code; // Modify this based on the response format from ChatGPT API
+                const Prompt = ${
+                this.methods.Prompt.toString()
+                }
+                const sendMessageToChatGpt = (message)=>{
+                    Prompt('chat', message, 'gpt-3.5-turbo')
+                }
+                // Function to access another API
+                async function accessOtherApi() {
+                const response = await fetch(otherApiEndpoint, {
+                    headers: {
+                    'Authorization': 'Bearer ' + otherApiKey
+                    }
+                });
+                const data = await response.json();
+                return data; // Modify this based on the response format from the other API
+                }
+                // Function to display a message in the chat
+                function displayMessage(message) {
+                const messageElement = document.createElement('div');
+                messageElement.textContent = message;
+                chatMessages.appendChild(messageElement);
+                }
+                // Event listener for submit button click
+                // submitBtn.addEventListener('click', submitMessage);
+                
+                // Function to adjust the row size of the user input textarea
+                function adjustUserInputRows() {
+                const lines = userInput.value.split('\\n');
+                userInput.rows = Math.min(lines.length, 10);
+                }
+                // Event listener for user input changes
+                userInput.addEventListener('input', adjustUserInputRows);
+                
+                // Event listener for user input changes
+                [userInput, contextInput, formatInput].forEach((element)=>{
+                    element.addEventListener('keydown', function(event) {
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                            event.preventDefault(); // Prevent the textarea from inserting a new line
+                            submitMessage();
+                        }
+                    });
+                });
+            </script>
+            </body>
+        </html>`;
+    }
+    chatV2(){
+        return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>ChatGPT Web Component</title>
+          <style>
+            /* Styles for the chat container */
+            #chat-container {
+              width: 100%;
+              margin: 0 auto;
+              padding: 20px;
+              background-color: #f2f2f2;
+              border: 1px solid #ccc;
+              border-radius: 5px;
+              display: flex;
+              flex-direction: column;
+              height: 100%; /* Adjust the overall height of the chat container as needed */                
+            }
+            /* Styles for the chat messages */
+            #chat-messages {
+              margin-bottom: 20px;
+              height: 200px;
+              overflow-y: auto; /* Enable vertical scrolling */
+              padding: 10px;
+              background-color: #fff;
+              border: 1px solid #ccc;
+              border-radius: 5px;
+              height: 80%; /* 80% of the chat container height */
+            }
         
+            /* Styles for the user input */
+            #instructions {
+              width: 100%;
+              margin-bottom: 10px;
+              padding: 5px;
+              border: 1px solid #ccc;
+              border-radius: 3px;
+              height: 20%; /* 20% of the chat container height */
+            }
+        
+            /* Styles for the submit button */
+            #submit-btn {
+              display: block;
+              width: 100%;
+              padding: 8px;
+              background-color: #4caf50;
+              color: #fff;
+              border: none;
+              border-radius: 3px;
+              cursor: pointer;
+            }
+        
+            /* Styles for chat messages */
+            #chat-messages div {
+              margin-bottom: 5px;
+            }
+        
+            /* Customized styles for user and AI messages */
+            #chat-messages div:nth-child(odd) {
+              color: #0099ff; /* User message color */
+            }
+        
+            #chat-messages div:nth-child(even) {
+              color: #ff9900; /* AI message color */
+            }
+        
+            /* Styles for other API response */
+            #chat-messages div:last-child {
+              color: #555; /* Other API response color */
+            }
           </style>
         </head>
         <body>
           <div id="chat-container">
             <div id="chat-messages"></div>
+            <textarea id="prediction-input" rows="1" placeholder="ai prediction"></textarea>
             <textarea id="instructions" rows="10" maxlength="8000" placeholder="Command the AI"></textarea>
             <textarea id="context-input" rows="10" maxlength="8000" placeholder="Enter context here"></textarea>
             <textarea id="response-format" rows="10" maxlength="8000" placeholder="Enter response format here"></textarea>
-            <button id="submit-btn">Submit</button>
-          </div>
-        
+          </div>        
           <script>
             // Add your JavaScript code here
             const chatContainer = document.getElementById('chat-container');
             const chatMessages = document.getElementById('chat-messages');
+            const prediction = document.getElementById('prediction-input');
             const userInput = document.getElementById('instructions');
             const contextInput = document.getElementById('context-input');
             const formatInput = document.getElementById('response-format');
-            const submitBtn = document.getElementById('submit-btn');
-        
+            // const submitBtn = document.getElementById('submit-btn');
             // ChatGPT API configuration
             const chatGptApiEndpoint = 'YOUR_CHATGPT_API_ENDPOINT';
             const chatGptApiKey = 'YOUR_CHATGPT_API_KEY';
-        
             // Other API configuration
             const otherApiEndpoint = 'OTHER_API_ENDPOINT';
             const otherApiKey = 'OTHER_API_KEY';
-        
             const submitMessage = async function() {
-                const userInputValue = userInput.value;
-                displayMessage('User: ' + userInputValue);
-
-                const contextValue = contextInput.value;
-                displayMessage('Context: ' + contextValue);
-
-                const formatValue = formatInput.value;
-                displayMessage('Format: ' + formatValue);
-
-                const message = \`userInputValue + "\n" + contextValue\ + "\n"\`          
-                // Send user message to ChatGPT API
-                const generatedCode = await sendMessageToChatGpt(userInputValue);
-                displayMessage('AI: ' + generatedCode);
-          
-                // Access another API
-                const otherApiResponse = await accessOtherApi();
-                displayMessage('Other API Response: ' + JSON.stringify(otherApiResponse));
-          
-                // Clear user input
-                userInput.value = '';
-            }   
-
-            // Function to send a message to ChatGPT API
-            //async function sendMessageToChatGpt(message) {
-            //   const response = await fetch(chatGptApiEndpoint, {
-            //     method: 'POST',
-            //     headers: {
-            //       'Content-Type': 'application/json',
-            //       'Authorization': 'Bearer ' + chatGptApiKey
-            //     },
-            //     body: JSON.stringify({
-            //       message: message
-            //     })
-            //   });
-        
-            //   const data = await response.json();
-            //   return data.generated_code; // Modify this based on the response format from ChatGPT API
+              const userInputValue = userInput.value;
+              displayMessage('User: ' + userInputValue);
+              const contextValue = contextInput.value;
+              displayMessage('Context: ' + contextValue);
+              const formatValue = formatInput.value;
+              displayMessage('Format: ' + formatValue);
+              const message = \`\${userInputValue}\n\${contextValue}\n\${formatValue}\n\`;          
+              // Send user message to ChatGPT API
+              const generatedCode = await sendMessageToChatGpt(message);
+              displayMessage('AI: ' + generatedCode);
+              // Access another API
+              const otherApiResponse = await accessOtherApi();
+              displayMessage('Other API Response: ' + JSON.stringify(otherApiResponse));
+              // Clear user input
+              userInput.value = '';
+              contextInput.value = '';
+              // response format stays
+            }
             const Prompt = ${
-                this.methods.Prompt.toString()
+              this.methods.Prompt.toString()
             }
             const sendMessageToChatGpt = (message)=>{
                 Prompt('chat', message, 'gpt-3.5-turbo')
@@ -1071,42 +1410,93 @@ module.exports = class AI {
                   'Authorization': 'Bearer ' + otherApiKey
                 }
               });
-        
               const data = await response.json();
               return data; // Modify this based on the response format from the other API
             }
-        
             // Function to display a message in the chat
             function displayMessage(message) {
               const messageElement = document.createElement('div');
               messageElement.textContent = message;
               chatMessages.appendChild(messageElement);
             }
-        
             // Event listener for submit button click
-            submitBtn.addEventListener('click', submitMessage);
-
+            // submitBtn.addEventListener('click', submitMessage);
+            
             // Function to adjust the row size of the user input textarea
             function adjustUserInputRows() {
-                const lines = userInput.value.split('\\n');
-                userInput.rows = Math.min(lines.length, 10);
+              const lines = userInput.value.split('\\n');
+              userInput.rows = Math.min(lines.length, 10);
             }
             // Event listener for user input changes
             userInput.addEventListener('input', adjustUserInputRows);
-
+            
             // Event listener for user input changes
             userInput.addEventListener('keydown', function(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
+              if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault(); // Prevent the textarea from inserting a new line
                 submitMessage();
-            }
+              }
             });
-          </script>
-        </body>
-        </html>
-        `
-    }
+            let timerId;
 
+            function startGhostWriting() {
+                timerId = setInterval(ghostWrite, 9000); // Run ghostWrite every 5 seconds
+            }
+
+            function stopGhostWriting() {
+                clearInterval(timerId); // Stop the ghostwriting interval
+            }
+
+            function ghostWrite() {
+            // This is the ghostwriting logic
+            // Replace this with your desired ghostwriting behavior
+            console.log("Ghostwriting...");
+            }
+
+            // Start ghostwriting when the user is inactive
+            let inactiveTime = 0;
+            const inactivityThreshold = 9000; // 9 seconds of inactivity
+
+            function resetTimer() {
+                clearTimeout(timerId);
+                inactiveTime = 0;
+                timerId = setTimeout(()=>{
+                    startGhostWriting();
+                    predictNextWords(7);
+                }, inactivityThreshold);
+            }
+
+            // Event listeners to detect user activity
+            document.addEventListener("mousemove", resetTimer);
+            document.addEventListener("keydown", resetTimer);
+            document.addEventListener("scroll", resetTimer);
+
+            // Start the initial timer
+            timerId = setTimeout(startGhostWriting, inactivityThreshold);
+
+            async function predictNextWords(numWords) {
+                const instructions = "predict the next " + numWords + " words.";
+                const prediction = await Prompt(instructions);
+                let answer = prompt("Are you okay with these predicted words? (yes / no): " + prediction);
+                if (answer === "yes") {
+                    out += answer;
+                    // then place words in predictions input
+                    userInput.value += prediction;
+                }
+            }
+            // Event listener for user input changes
+            [userInput, contextInput, formatInput].forEach((element)=>{
+                element.addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault(); // Prevent the textarea from inserting a new line
+                        submitMessage();
+                    }
+                });
+            });
+            </script>
+            </body>
+        </html>`;
+    }
     router(z){
         return async (req, res) => {
             // this.currentTask
@@ -1123,21 +1513,26 @@ module.exports = class AI {
             if (req.method === 'GET' && req.url === '/') {
                 console.log("onsite");
                 this.onSite(req, res);
-            } else if (req.method === 'POST' && req.url === '/your-route') {
+            } else if (req.method === 'POST' && req.url === '/prompt') {
+                console.log("onprompt");
                 let requestBody = '';
                 req.on('data', (chunk) => {
                     requestBody += chunk;
                 });
                 req.on('end', () => {
                 try {
-                    const { service, model, prompt } = JSON.parse(requestBody);
+                    const { 
+                        action, 
+                        service, 
+                        model, 
+                        prompt } = JSON.parse(requestBody);
                     // Access the values of service, model, and prompt here
                     console.log('Service:', service);
                     console.log('Model:', model);
                     console.log('Prompt:', prompt);
                     // Do something with the data...
                     // this.onPrompt({service, model, prompt});
-                    controller(req, res, {service, model, prompt})
+                    controller(req, res, {action, service, model, prompt})
                     const responseData = {
                         message: airesponse,
                     };
