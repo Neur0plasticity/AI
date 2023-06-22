@@ -422,8 +422,8 @@ module.exports = class AI {
         // this.ai = require("./AI")({});
         this.fs = require("fs");
         this.logcnt = 0;//this.fs.readdirSync("./assistants/generated/0.__logs__", "utf8").length;
-        this.departmentL_str = this.fs.readFileSync("./departments.txt", "utf8");
-        this.departmentL_computer_str = this.fs.readFileSync("./department-computer.txt", "utf8");
+        // this.departmentL_str = this.fs.readFileSync("./departments.txt", "utf8");
+        // this.departmentL_computer_str = this.fs.readFileSync("./department-computer.txt", "utf8");
 
         //     "conversation": (messages) => {
         //         let str = `<conversation>`
