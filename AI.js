@@ -188,7 +188,8 @@ const AI = class AI {
             let prompt = immutable + response;
         //     if (obj.humanreview) await this.humanreview();
         //     else 
-               prompt = await this.services[service]({model, prompt, max_tokens, temperature})
+            //    prompt = 
+               await this.services[service]({model, prompt, max_tokens, temperature})
                     .then(this.onResponse.bind(this))
                     .catch(this.autoDebug.bind(this))
                 // if (obj.qualityCheck) await this.methods[service]({model, prompt, max_tokens, temperature})
@@ -199,7 +200,7 @@ const AI = class AI {
         let _this = {};
         console.log('Running in Node.js');
         const configuration = new this.openai.Configuration({
-            apiKey: process.env.OPENAI_API_KEY,
+            // apiKey: process.env.OPENAI_API_KEY,
         });
         // console.error("ERROR: NEED TO MAKE IT SO CLIENT SUBMITS OPENAI_API_KEY");
         const openai = new this.openai.OpenAIApi(configuration);
