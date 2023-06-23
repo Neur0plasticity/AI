@@ -1,11 +1,11 @@
-`<script>eval(`;
+`<script async>eval(`;
 'strict';
 'npm install';
 'npm audit fix';
 'node -e ';
 // eval('
 // if (print) { module = {"exports":{}} }
-module.exports = class AI {
+const AI = class AI {
     /**
      * Built to be synchronous execution until unsupervised prompting is mastered.
      */
@@ -17,6 +17,8 @@ module.exports = class AI {
         nextTask: "",
         answerToLastPrompt: "",
     }
+    state = {};
+    openai = require("openai"); // require("openai");
     // bots = [ // bot workers
     //     "GoalBot",
     //     "AutoTasker",
@@ -24,13 +26,6 @@ module.exports = class AI {
     // ];
     ainodes = [];
     prompts = {
-        everyprompt: {
-            taskPlanner:        "write the universal tasks",
-            aptModel:           "which ai model is the best to answer this prompt",
-            taskexecution:      "complete the prompt",
-            qualityCheck:       "",
-            prompt:             "",// main action response
-        },
         "generate-list-of-office-professions": "generate a list of office professions",
         "per-profession": {
             // "pre-prompt": "write a prompt",
@@ -62,171 +57,153 @@ module.exports = class AI {
         "IT Systems Administrator", 
         "Human Resources"
     ]
-
-    phases = {
+    guide = {
         service: [
-            {
-              "step": "Identify the service opportunity",
-              "description": "Understand the market and customer needs to identify a service opportunity or gap."
-            },
-            {
-              "step": "Research and gather information",
-              "description": "Conduct market research, analyze competitors, and collect relevant data to gain insights and inform the service development."
-            },
-            {
-              "step": "Define service goals and objectives",
-              "description": "Set clear and specific goals and objectives that the service should achieve."
-            },
-            {
-              "step": "Generate service ideas",
-              "description": "Brainstorm and explore various service concepts and solutions to address the identified opportunity or gap."
-            },
-            {
-              "step": "Evaluate and select the best service concept",
-              "description": "Assess the generated service ideas based on feasibility, viability, and desirability. Choose the most promising service concept."
-            },
-            {
-              "step": "Plan and design the service",
-              "description": "Develop a detailed plan and design for the service, including its offerings, processes, and customer experience."
-            },
-            {
-              "step": "Develop a service prototype",
-              "description": "Create a prototype or mock-up of the service to test and validate its design and customer experience."
-            },
-            {
-              "step": "Iterate and refine the service",
-              "description": "Gather feedback from stakeholders and potential customers, make improvements, and iterate on the service concept and design."
-            },
-            {
-              "step": "Finalize service details",
-              "description": "Define the service features, pricing, delivery channels, and any additional components necessary for its successful implementation."
-            },
-            {
-              "step": "Develop service infrastructure",
-              "description": "Build the required infrastructure, systems, and resources to support the delivery of the service, such as technology platforms, human resources, and facilities."
-            },
-            {
-              "step": "Train service staff",
-              "description": "Provide training and development programs to equip the service staff with the necessary knowledge and skills to deliver the service effectively."
-            },
-            {
-              "step": "Launch the service",
-              "description": "Officially introduce the service to the market or target audience, making it available for use or purchase."
-            },
-            {
-              "step": "Deliver the service",
-              "description": "Provide the service to customers as per the defined offerings and customer experience, ensuring high-quality and consistent delivery."
-            },
-            {
-              "step": "Monitor and evaluate performance",
-              "description": "Track and measure key performance indicators (KPIs) to assess the service's effectiveness, customer satisfaction, and make data-driven improvements."
-            },
-            {
-              "step": "Gather customer feedback",
-              "description": "Collect feedback from customers to understand their experience, identify areas for improvement, and gather insights for enhancing the service."
-            },
-            {
-              "step": "Iterate and enhance the service",
-              "description": "Apply customer feedback and insights to continuously iterate on the service, enhance its offerings, improve customer experience, and address emerging needs."
-            }
+            // Create a step-by-step guide for developing and launching a new service:
+            {"step": "Identify the service opportunity",    "description": "Understand the market and customer needs to identify a service opportunity or gap."},
+            {"step": "Research and gather information",     "description": "Conduct market research, analyze competitors, and collect relevant data to gain insights and inform the service development."},
+            {"step": "Define service goals and objectives", "description": "Set clear and specific goals and objectives that the service should achieve."},
+            {"step": "Generate service ideas",              "description": "Brainstorm and explore various service concepts and solutions to address the identified opportunity or gap."},
+            {"step": "Evaluate and select the best service concept","description": "Assess the generated service ideas based on feasibility, viability, and desirability. Choose the most promising service concept."},
+            {"step": "Plan and design the service",         "description": "Develop a detailed plan and design for the service, including its offerings, processes, and customer experience."},
+            {"step": "Develop a service prototype",         "description": "Create a prototype or mock-up of the service to test and validate its design and customer experience."},
+            {"step": "Iterate and refine the service",      "description": "Gather feedback from stakeholders and potential customers, make improvements, and iterate on the service concept and design."},
+            {"step": "Finalize service details",            "description": "Define the service features, pricing, delivery channels, and any additional components necessary for its successful implementation."},
+            {"step": "Develop service infrastructure",      "description": "Build the required infrastructure, systems, and resources to support the delivery of the service, such as technology platforms, human resources, and facilities."},
+            {"step": "Train service staff",                 "description":"Provide training and development programs to equip the service staff with the necessary knowledge and skills to deliver the service effectively."},
+            {"step": "Launch the service",                  "description": "Officially introduce the service to the market or target audience, making it available for use or purchase."},
+            {"step": "Deliver the service",                 "description": "Provide the service to customers as per the defined offerings and customer experience, ensuring high-quality and consistent delivery."},
+            {"step": "Monitor and evaluate performance",    "description": "Track and measure key performance indicators (KPIs) to assess the service's effectiveness, customer satisfaction, and make data-driven improvements."},
+            {"step": "Gather customer feedback",            "description": "Collect feedback from customers to understand their experience, identify areas for improvement, and gather insights for enhancing the service."},
+            {"step": "Iterate and enhance the service",     "description": "Apply customer feedback and insights to continuously iterate on the service, enhance its offerings, improve customer experience, and address emerging needs."}
         ],
-        product: [
-            {
-              "step": "Identify the Problem",
-              "description": "Recognize a problem that needs a solution. This could come from user feedback, data analysis, market research, or direct observation."
-            },
-            {
-              "step": "Define the Problem",
-              "description": "Understand and articulate the problem clearly. This involves asking the right questions to explore the problem, its context, and its impact."
-            },
-            {
-              "step": "Conduct Research",
-              "description": "Research the problem in-depth to understand all its aspects. This may involve studying industry trends, existing solutions, user needs, and market gaps."
-            },
-            {
-              "step": "Brainstorm Solutions",
-              "description": "Come up with a wide range of possible solutions. Encourage creative thinking and aim to generate as many ideas as possible."
-            },
-            {
-              "step": "Evaluate Solutions",
-              "description": "Assess each potential solution based on feasibility, impact, and alignment with your business goals. This should help narrow down the list of possibilities."
-            },
-            {
-              "step": "Prototype the Solution",
-              "description": "Develop a prototype or a minimum viable product (MVP) for the chosen solution. This serves as an early model to test and validate your ideas."
-            },
-            {
-              "step": "Test the Solution",
-              "description": "Test your prototype or MVP with a small group of users. Gather feedback and observe how well the solution addresses the problem."
-            },
-            {
-              "step": "Refine the Solution",
-              "description": "Based on the feedback and testing results, refine and enhance the solution. Iterate on the design and functionality until it meets user needs effectively."
-            },
-            {
-              "step": "Production and Implementation",
-              "description": "Move the product from development to production. This involves finalizing the design, building out all features, and preparing the solution for launch."
-            },
-            {
-              "step": "Product Launch",
-              "description": "Launch the product in the market. This involves marketing activities to create awareness and strategies to achieve adoption."
-            },
-            {
-              "step": "Post-Launch Evaluation",
-              "description": "Monitor and evaluate the performance of the product post-launch. This includes tracking key metrics, gathering user feedback, and making necessary adjustments."
-            },
-            {
-              "step": "Continuous Improvement",
-              "description": "Based on the evaluation, continue to enhance the product, address issues, and add new features as necessary. This ensures that the product remains effective and competitive over time."
-            }
-          ]                    
+        product: [ // Create a step-by-step guide for solving a problem and developing a successful product:
+            {"step": "Identify the Problem",            "description": "Recognize a problem that needs a solution. This could come from user feedback, data analysis, market research, or direct observation."},
+            {"step": "Define the Problem",              "description": "Understand and articulate the problem clearly. This involves asking the right questions to explore the problem, its context, and its impact."},
+            {"step": "Conduct Research",                "description": "Research the problem in-depth to understand all its aspects. This may involve studying industry trends, existing solutions, user needs, and market gaps."},
+            {"step": "Brainstorm Solutions",            "description": "Come up with a wide range of possible solutions. Encourage creative thinking and aim to generate as many ideas as possible."},
+            {"step": "Evaluate Solutions",              "description": "Assess each potential solution based on feasibility, impact, and alignment with your business goals. This should help narrow down the list of possibilities."},
+            {"step": "Prototype the Solution",          "description": "Develop a prototype or a minimum viable product (MVP) for the chosen solution. This serves as an early model to test and validate your ideas."},
+            {"step": "Test the Solution",               "description": "Test your prototype or MVP with a small group of users. Gather feedback and observe how well the solution addresses the problem."},
+            {"step": "Refine the Solution",             "description": "Based on the feedback and testing results, refine and enhance the solution. Iterate on the design and functionality until it meets user needs effectively."},
+            {"step": "Production and Implementation",   "description": "Move the product from development to production. This involves finalizing the design, building out all features, and preparing the solution for launch."},
+            {"step": "Product Launch",                  "description": "Launch the product in the market. This involves marketing activities to create awareness and strategies to achieve adoption."},
+            {"step": "Post-Launch Evaluation",          "description": "Monitor and evaluate the performance of the product post-launch. This includes tracking key metrics, gathering user feedback, and making necessary adjustments."},
+            {"step": "Continuous Improvement",          "description": "Based on the evaluation, continue to enhance the product, address issues, and add new features as necessary. This ensures that the product remains effective and competitive over time."}
+          ],                    
     }
-    methods = (function() {
-        let _this = {};
-        _this.Prompt = async function(service, prompt, model){
-            // const queryParams = new URLSearchParams({
-            //     action:service, 
-            //     model: model || "gpt-3.5-turbo",
-            // });
-            const url = `/prompt`//?${queryParams}`;
-            const data = {
-                prompt,
-                // apiKey,
-                action: "prompt", 
-                service,
-                model,
-            };
-            return fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(result => {
-                console.log('Response:', result);
-                // Handle the response data here
-                return result;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Handle any errors that occurred during the request
-            });
+    mem = {
+        /**
+         * Mem operators allow you to have fault tolerant memory state
+         * The memory is switched between ram and storage.
+         */
+        /**
+            // db in cloud (google, amazon, microsoft, apple)
+            // db in github.com
+            // browser db (localstorage, or save data in source code)
+            // nodejs (mongodb)
+         */
+        set(key, value) {this.state[key] = value;}, write(){},
+        get(key)        {return this.state[key];},  read(){},
+        del(key)        {delete this.state[key];},  delete(){},
+        cln(key)        {return this.state[key];},
+    }
+    Prompt = async function(service, prompt, model){
+        // const queryParams = new URLSearchParams({
+        //     action:service, 
+        //     model: model || "gpt-3.5-turbo",
+        // });
+        const url = `/prompt`//?${queryParams}`;
+        const data = {
+            prompt,
+            // apiKey,
+            action: "prompt", 
+            service,
+            model,
         };
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            console.log('Response:', result);
+            // Handle the response data here
+            return result;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Handle any errors that occurred during the request
+        });
+    };
+    async onPrompt(response){
+        // this.prompts = Object.keys(this.prompts.everyprompt);
+        // let service = this.prompts.shift();
+        const service = process.argv[2];
+        const model = process.argv[3]; 
+        const max_tokens = 2048;
+        const temperature = 0.3;
+        console.log('service', service);
+        const middlewareprompt = {
+            aptModel:           (prompt) => "which ai model is the best to answer this prompt: " + prompt,
+            refactorPrompt:     (prompt) => "refactor the prompt: " + prompt,
+            taskPlanner:        (task) => `if necessary, write tasks for: ${task}`,
+            manifesto:          (prompt) => `
+            always respond in this format until endGoal achieved.
+            once goal achieved, ask for new goal and return response format:
+            1) <endGoal> (once achieved respond with bash code)
+            2) <list of task names and completion statuses only list last 3, current, and 2 tasks forward if available>
+            3) <currenttask>
+            4) <summary of summaries>
+            5) <current summary>
+            6) <prompt to human>
+            7) <try to predict human response>
+            8) <thoughts made during prompt>
+            `,
+            qualityCheck:       (data) => "improve the quality of the data provided: " + data,
+            review:             (prompt) => "",
+            gitpush:            () => "write commands that lead upto git push",
+        };
+        const order = [
+        {   prompt: "aptModel",         qualityCheck: true,     humanreview: false},
+        {   prompt: "refactorPrompt",   qualityCheck:false,     humanreview: false},
+        {   prompt: "taskPlanner",      qualityCheck: true,     humanreview: true},
+        {   prompt: "manifesto",        qualityCheck: true,     humanreview: true},
+        {   prompt: "gitpush",          qualityCheck: false,    humanreview: false},
+        ];
+        const respondenv = "node.js";
+        const immutable = `
+        achieve the prompts goal.
+        respond only in ${respondenv}
+        place all code in one block. 
+        print each task. 
+        ##prompt##
+        `;
+        // for (let obj of order) {
+        //     console.log(obj.prompt);
+            // let prompt = immutable + middlewareprompt[obj.prompt](response); //prompt;
+            let prompt = immutable + response;
+        //     if (obj.humanreview) await this.humanreview();
+        //     else 
+               prompt = await this.services[service]({model, prompt, max_tokens, temperature})
+                    .then(this.onResponse.bind(this))
+                    .catch(this.autoDebug.bind(this))
+                // if (obj.qualityCheck) await this.methods[service]({model, prompt, max_tokens, temperature})
+                //     .then(this.onResponse.bind(this))
+                //     .catch(this.autoDebug.bind(this));
+    }
+    services = (function() {
+        let _this = {};
         console.log('Running in Node.js');
-        const { Configuration, OpenAIApi } = require("openai") // require("openai");
-        console.log(Configuration)
-        const configuration = new Configuration({
-            // apiKey: process.env.OPENAI_API_KEY,
-            apiKey: "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",
+        const configuration = new this.openai.Configuration({
+            apiKey: process.env.OPENAI_API_KEY,
         });
         // console.error("ERROR: NEED TO MAKE IT SO CLIENT SUBMITS OPENAI_API_KEY");
-        const openai = new OpenAIApi(configuration);
+        const openai = new this.openai.OpenAIApi(configuration);
         _this.getModels = async function(){
-            // const configuration = new Configuration({
-            //     apiKey: process.env.OPENAI_API_KEY,
-            // });
             const openai = new OpenAIApi(configuration);
             const response = await openai.listModels();
             return response;
@@ -240,7 +217,7 @@ module.exports = class AI {
                 "gpt-3.5-turbo",
             ];
             const completion = await openai.createChatCompletion({
-                model: model,
+                model,
                 messages: [
                     // ...messages,
                     {role: "user", content: prompt}
@@ -248,7 +225,7 @@ module.exports = class AI {
             });
             return completion;          
         }
-        _this.textCompletion = async function({model, prompt, max_tokens=2000, temperature=0.3}){
+        _this.textCompletion = async function({model, prompt, max_tokens=2048, temperature=0.3}){
             const models = [
                 "babbage",
                 "text-babbage-001",
@@ -380,36 +357,38 @@ module.exports = class AI {
             return models.openaiModels;
         }
         return _this;
-    })();
+    }).bind(this)();
     executionenvironment(code){
         const { exec } = require('child_process');
         let language = "javascript";
         let filename = "taskprogram";
         require("fs").writeFileSync('./'+filename + '.js', code);
         const commandMap = {
-        java: (filename, code)          => `java -cp . '${filename}.java'`,
-        python: (filename, code)        => `python -c '${code}'`,
-        javascript: (filename, code)    => `node ./${filename}.js`,
-        c: (filename, code)             => `echo '${code}' | gcc -x c -o '${filename}' - && './${filename}'`,
-        "c++": (filename, code)         => `echo '${code}' | g++ -x c++ -o '${filename}' - && './${filename}'`,
-        "c#": (filename, code)          => `dotnet script -p '${filename}.csx'`,
-        ruby: (filename, code)          => `ruby -e '${code}'`,
-        php: (filename, code)           => `php -r '${code}'`,
-        swift: (filename, code)         => `swift -e '${code}'`,
-        go: (filename, code)            => `echo '${code}' | go run -`,
-        bash: (filename, code)          => `bash -c '${code}'`,
-        html: (filename, code)          => `echo '${code}' > '${filename}.html' && open -a 'Google Chrome' '${filename}.html'`,
-        powershell: (filename, code)    => `powershell -Command '${code}'`
-        };          
+            html: (filename, code)          => `echo '${code}' > '${filename}.html' && open -a 'Google Chrome' '${filename}.html'`,
+            powershell: (filename, code)    => `powershell -Command '${code}'`,
+            bash: (filename, code)          => `bash -c '${code}'`,
+            python: (filename, code)        => `python -c '${code}'`,
+            javascript: (filename, code)    => `node ./${filename}.js`,
+            java: (filename, code)          => `java -cp . '${filename}.java'`,
+            c: (filename, code)             => `echo '${code}' | gcc -x c -o '${filename}' - && './${filename}'`,
+            "c++": (filename, code)         => `echo '${code}' | g++ -x c++ -o '${filename}' - && './${filename}'`,
+            "c#": (filename, code)          => `dotnet script -p '${filename}.csx'`,
+            ruby: (filename, code)          => `ruby -e '${code}'`,
+            php: (filename, code)           => `php -r '${code}'`,
+            swift: (filename, code)         => `swift -e '${code}'`,
+            go: (filename, code)            => `echo '${code}' | go run -`,
+        };
         const command = commandMap[language](filename, code);
         if (command) {
           exec(command, (error, stdout, stderr) => {
-            if (error) {
+            if (stderr) {
               console.error(`Error executing command: ${error.message}`);
               return;
             }
-            console.log(stdout);
-            console.log(`#`.repeat(9))
+            if (stdout) {
+                console.log(stdout);
+                console.log(`#`.repeat(9))
+            }
           })
             // eval(require("fs").writeFileSync('./'+filename + '.js', "utf8"))
         } else {
@@ -417,14 +396,14 @@ module.exports = class AI {
         }
     }
     // Function to handle user input
-    catches = 0;
     constructor() {
+        this.onEnvironment();
+        this.onExitAPP();
         // this.ai = require("./AI")({});
-        this.fs = require("fs");
+        // this.fs = require("fs");
         this.logcnt = 0;//this.fs.readdirSync("./assistants/generated/0.__logs__", "utf8").length;
         // this.departmentL_str = this.fs.readFileSync("./departments.txt", "utf8");
         // this.departmentL_computer_str = this.fs.readFileSync("./department-computer.txt", "utf8");
-
         //     "conversation": (messages) => {
         //         let str = `<conversation>`
         //         str += "\n";
@@ -439,10 +418,13 @@ module.exports = class AI {
         //         str += `</conversation>`
         //     }
         // }
-        this.onEnvironment();
+        // openEveryWhere;
+            // in browser  open in node,     electron
+            // in node     open in browser,  electron
+            // in electron open in browser,  node
+        //     hive.parse();
+        //     hive.populate();
     }
-    // onBrowser = ["Prompt"];
-    // onNodeJS = ["getModels","chat","textCompletion","editImage", "variationImage", "createImage"];
     env = "onBrowser";
     onEnvironment(){
         this.isBrowser = typeof window !== 'undefined';
@@ -451,13 +433,70 @@ module.exports = class AI {
         else if (this.isNodeJS) this.onNodeJS();
         else                    throw new Error("Environment not supported");
     }
+    onExitAPP(){
+        if (this.isBrowser) {
+            window.addEventListener('beforeunload', function(event) {
+                // Code to execute when the browser is about to close
+            
+                // You can prompt the user with a confirmation message
+                event.returnValue = 'Are you sure you want to leave this page?';
+            });
+        } else if (this.isNodeJS) {
+            process.on('beforeExit', (code) => {
+                // Code to execute before the Node.js process exits
+              
+                console.log('Before Exit event fired.');
+              });
+              
+              process.on('exit', (code) => {
+                // Code to execute when the Node.js process exits
+              
+                console.log('Exit event fired.');
+              });              
+        } else throw new Error("On Exit environment not implemented");
+    }
+    saveFile(){
+        // to browser
+        if (this.isBrowser) {
+            var data = "This is the content of the file.";
+            var filename = "filename.txt";
+            var element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(data));
+            element.setAttribute('download', filename);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        } else if (this.isShell) {
+
+        } 
+    }
+    readFile(){
+        // <input type="file" id="fileInput">
+        // <script>
+        if (this.isBrowser) {
+            document.getElementById('fileInput').addEventListener('change', function(event) {
+                var file = event.target.files[0];
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var fileContent = e.target.result;
+                    // Process the file content here
+                    
+                    console.log(fileContent);
+                };
+                reader.readAsText(file);
+            });
+        }
+        // </script>
+    }
     onBrowser(){
         this.env = "browser";
         const answer = prompt("Run AI on (console | gui)?");
-        only: if (answer === "extension")   this.isExtension = true;
+        only:if (answer === "extension")    this.isExtension = true;
         else if (answer === "console")      this.isConsole = true;
         else if (answer === "gui")          this.isGUI === true;
         else throw new Error();
+        // load on nodejs   // save File if not exist
     }
     onNodeJS(){
         this.env = "nodejs";
@@ -472,6 +511,9 @@ module.exports = class AI {
         this.isServer = sameModuleCalledAsMain && true;
         this.server();
         this.ui();
+    }
+    onElectron(){
+
     }
     parse(){
         log(`./assistants/generated/0.__logs__/${this.logcnt++}.txt`, "started program");
@@ -604,53 +646,26 @@ module.exports = class AI {
             </context>
         `
     };
-    // prompt(prompt) {
-    //     // this.ai.textCompletion({
-
-    //     // })
-    //     return this.ai.chat({
-    //             model: "gpt-3.5-turbo",
-    //             prompt,
-    //     })
-    // }
-
-    prompter = ["morpheus", "a-z"];
-    async onPrompt(response){
-        const prompt = `
-        achieve the prompts goal.
-        respond only in nodejs. 
-        place all code in one block. 
-        console.log each task. 
-        ##prompt##
-        \n 
-        ` + response; //prompt; 
-        // this.prompts = Object.keys(this.prompts.everyprompt);
-        // let service = this.prompts.shift();
-        const service = process.argv[2];
-        const model = process.argv[3]; 
-        const max_tokens = 2048;
-        const temperature = 0.3;
-        console.log('service', service);
-        // console.log(this);
-        await this.methods[service]({model, prompt, max_tokens, temperature})
-        .then(this.onResponse.bind(this))
-        .catch(this.autoDebug.bind(this));
-    }
+    struct = ["morpheus","", "a-z"]
     onResponse(response){
         // this.onPrompt.bind(this)(response);
-        const gptreply = response.data.choices[0].text;
+        const aireply = response.data.choices[0].text;
         console.log(`################################\n`.repeat(2))
-        console.log(gptreply);
+        console.log(aireply);
         console.log(`################################\n`.repeat(2))
         console.log();
-        this.executionenvironment(gptreply);
+        this.executionenvironment(aireply);
     }
+    catches = 0;
     autoDebug(error) {
         console.error('Error:', error);
         console.log("auto debug itself");
         if (this.catches < 3) this.catches++, this.onPrompt(String(error));
         else this.catches = 0;
     }
+    humanreview(response){
+        // need to display response to human.
+    };
     morpheusPrompt(){ // advanced goal oriented self modifying prompting
         /*
             Thank you for providing more context. Based on your description, 
@@ -666,13 +681,6 @@ module.exports = class AI {
             memory-based mechanisms, or reinforcement learning techniques to carry forward relevant 
             information while discarding irrelevant details.
         */
-        const prompt = `
-        1) endgoal:
-        2) currenttask: 
-        3) informationneeded:
-        4) nextTask:
-        5) answerToLastPrompt:
-        `;
     }
     initialPrompt(){
         /**
@@ -721,6 +729,9 @@ module.exports = class AI {
         else if (this.isBrowser && this.isGUI)      this.ui_browser();
         else if (this.isBrowser && this.isConsole)  this.ui_console();
         else if (this.isBrowser && this.isExtension)this.ui_extension();
+        else if (this.isBrowser && this.isAlertBox) this.ui_alertbox();
+        else if (this.isElectron && this.isDesktop) this.ui_desktop()
+        else if (this.isElectron && this.isMobile)  this.ui_mobile();
         else throw new Error("environment not supported");
     }
     ui_terminal(){
@@ -731,6 +742,8 @@ module.exports = class AI {
         });
         console.log('Welcome to your AI CoPilot');
         console.log();
+        console.log(`I am also available in the browser`);
+        console.log('');
         console.log("tell me your goal");
         rl.setPrompt('You: ');
         rl.prompt();
@@ -740,17 +753,22 @@ module.exports = class AI {
     ui_console(){
         console.log('Welcome to the AI Chat console!');
         console.log();
-        console.log("tell me your goal");
+        console.log("tell me your goal ai.prompt()");
+    }
+    ui_alertbox(){
+        alert("Welcome to the AI Chat alertbox!");
+        const answer = prompt('tell me your goal');
+        this.onPrompt(answer);
     }
     ui_browser(){
         this.render();
     }
     ui_extension(){
         console.log("ui_extension");
-        if (chrome) {}
-        if (edge) {}
-        if (firefox) {}
-        if (safari) {}
+        // if (chrome) 
+        // if (edge)   
+        // if (firefox)
+        // if (safari) 
     }
     onSite(req, res, obj){
         const thiscode = require("fs").readFileSync("./AI.js","utf8");
@@ -838,8 +856,7 @@ module.exports = class AI {
             <div class="column assistants">${this.assistantsV0()}</div>
         </div>`;
     }
-    windowsV2() {
-        const html = `
+    windows_styleV0 = () => `
         <style>
             .row {
                 display: flex;
@@ -862,6 +879,8 @@ module.exports = class AI {
                 background-color: lightyellow;
             }
         </style>
+    `;
+    windows_styleV1 = () => `
         <script>
             class List {
                 constructor(title) {
@@ -901,13 +920,16 @@ module.exports = class AI {
                 });
             }
         </script>
+    `;
+    windowsV2 = () => `
+        ${this.windows_styleV0()}
+        ${this.windows_scriptV0()}
         <div class="row">
             <div class="column conversations">${this.conversationsV0()}</div>
             <div class="column chat">${this.chatV2()}</div>
             <div class="column assistants">${this.assistantsV0()}</div>
-        </div>`;
-        return html;
-    }
+        </div>`
+    ;
     assistantsV0() {
         return this.listV0("Assistant");
     }
@@ -1282,219 +1304,224 @@ module.exports = class AI {
             </body>
         </html>`;
     }
+    chat_styleV0 = () => `
+        <style>
+            /* Styles for the chat container */
+            #chat-container {
+                width: 100%;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #f2f2f2;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                display: flex;
+                flex-direction: column;
+                height: 100%; /* Adjust the overall height of the chat container as needed */                
+            }
+            /* Styles for the chat messages */
+            #chat-messages {
+                margin-bottom: 20px;
+                height: 200px;
+                overflow-y: auto; /* Enable vertical scrolling */
+                padding: 10px;
+                background-color: #fff;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                height: 80%; /* 80% of the chat container height */
+            }
+            /* Styles for the user input */
+            #instructions {
+                width: 100%;
+                margin-bottom: 10px;
+                padding: 5px;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+            height: 20%; /* 20% of the chat container height */
+            }
+
+            /* Styles for the submit button */
+            #submit-btn {
+                display: block;
+                width: 100%;
+                padding: 8px;
+                background-color: #4caf50;
+                color: #fff;
+                border: none;
+                border-radius: 3px;
+                cursor: pointer;
+            }
+
+            /* Styles for chat messages */
+            #chat-messages div {
+                margin-bottom: 5px;
+            }
+
+            /* Customized styles for user and AI messages */
+            #chat-messages div:nth-child(odd) {
+                color: #0099ff; /* User message color */
+            }
+
+            #chat-messages div:nth-child(even) {
+                color: #ff9900; /* AI message color */
+            }
+
+            /* Styles for other API response */
+            #chat-messages div:last-child {
+                color: #555; /* Other API response color */
+            }
+        </style>
+    `;
+    chat_script = () => `
+        <script>
+        // Add your JavaScript code here
+        const chatContainer = document.getElementById('chat-container');
+        const chatMessages = document.getElementById('chat-messages');
+        const prediction = document.getElementById('prediction-input');
+        const userInput = document.getElementById('instructions');
+        const contextInput = document.getElementById('context-input');
+        const formatInput = document.getElementById('response-format');
+        // const submitBtn = document.getElementById('submit-btn');
+        // ChatGPT API configuration
+        const chatGptApiEndpoint = 'YOUR_CHATGPT_API_ENDPOINT';
+        const chatGptApiKey = 'YOUR_CHATGPT_API_KEY';
+        // Other API configuration
+        const otherApiEndpoint = 'OTHER_API_ENDPOINT';
+        const otherApiKey = 'OTHER_API_KEY';
+        const submitMessage = async function() {
+        const userInputValue = userInput.value;
+        displayMessage('User: ' + userInputValue);
+        const contextValue = contextInput.value;
+        displayMessage('Context: ' + contextValue);
+        const formatValue = formatInput.value;
+        displayMessage('Format: ' + formatValue);
+        const message = \`\${userInputValue}\n\${contextValue}\n\${formatValue}\n\`;          
+        // Send user message to ChatGPT API
+        const generatedCode = await sendMessageToChatGpt(message);
+        displayMessage('AI: ' + generatedCode);
+        // Access another API
+        const otherApiResponse = await accessOtherApi();
+        displayMessage('Other API Response: ' + JSON.stringify(otherApiResponse));
+        // Clear user input
+        userInput.value = '';
+        contextInput.value = '';
+        // response format stays
+        }
+        const Prompt = ${
+        this.methods.Prompt.toString()
+        }
+        const sendMessageToChatGpt = (message)=>{
+            Prompt('chat', message, 'gpt-3.5-turbo')
+        }
+        // Function to access another API
+        async function accessOtherApi() {
+        const response = await fetch(otherApiEndpoint, {
+            headers: {
+            'Authorization': 'Bearer ' + otherApiKey
+            }
+        });
+        const data = await response.json();
+        return data; // Modify this based on the response format from the other API
+        }
+        // Function to display a message in the chat
+        function displayMessage(message) {
+        const messageElement = document.createElement('div');
+        messageElement.textContent = message;
+        chatMessages.appendChild(messageElement);
+        }
+        // Event listener for submit button click
+        // submitBtn.addEventListener('click', submitMessage);
+        
+        // Function to adjust the row size of the user input textarea
+        function adjustUserInputRows() {
+        const lines = userInput.value.split('\\n');
+        userInput.rows = Math.min(lines.length, 10);
+        }
+        // Event listener for user input changes
+        userInput.addEventListener('input', adjustUserInputRows);
+        
+        // Event listener for user input changes
+        userInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault(); // Prevent the textarea from inserting a new line
+            submitMessage();
+        }
+        });
+        let timerId;
+
+        function startGhostWriting() {
+            timerId = setInterval(ghostWrite, 9000); // Run ghostWrite every 5 seconds
+        }
+
+        function stopGhostWriting() {
+            clearInterval(timerId); // Stop the ghostwriting interval
+        }
+
+        function ghostWrite() {
+        // This is the ghostwriting logic
+        // Replace this with your desired ghostwriting behavior
+        console.log("Ghostwriting...");
+        }
+
+        // Start ghostwriting when the user is inactive
+        let inactiveTime = 0;
+        const inactivityThreshold = 9000; // 9 seconds of inactivity
+
+        function resetTimer() {
+            clearTimeout(timerId);
+            inactiveTime = 0;
+            timerId = setTimeout(()=>{
+                startGhostWriting();
+                predictNextWords(7);
+            }, inactivityThreshold);
+        }
+
+        // Event listeners to detect user activity
+        document.addEventListener("mousemove", resetTimer);
+        document.addEventListener("keydown", resetTimer);
+        document.addEventListener("scroll", resetTimer);
+
+        // Start the initial timer
+        timerId = setTimeout(startGhostWriting, inactivityThreshold);
+
+        async function predictNextWords(numWords) {
+            const instructions = "predict the next " + numWords + " words.";
+            const prediction = await Prompt(instructions);
+            let answer = prompt("Are you okay with these predicted words? (yes / no): " + prediction);
+            if (answer === "yes") {
+                out += answer;
+                // then place words in predictions input
+                userInput.value += prediction;
+            }
+        }
+        // Event listener for user input changes
+        [userInput, contextInput, formatInput].forEach((element)=>{
+            element.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault(); // Prevent the textarea from inserting a new line
+                    submitMessage();
+                }
+            });
+        });
+        </script>
+    `;
     chatV2(){
         return `
         <!DOCTYPE html>
         <html>
-        <head>
-          <title>ChatGPT Web Component</title>
-          <style>
-            /* Styles for the chat container */
-            #chat-container {
-              width: 100%;
-              margin: 0 auto;
-              padding: 20px;
-              background-color: #f2f2f2;
-              border: 1px solid #ccc;
-              border-radius: 5px;
-              display: flex;
-              flex-direction: column;
-              height: 100%; /* Adjust the overall height of the chat container as needed */                
-            }
-            /* Styles for the chat messages */
-            #chat-messages {
-              margin-bottom: 20px;
-              height: 200px;
-              overflow-y: auto; /* Enable vertical scrolling */
-              padding: 10px;
-              background-color: #fff;
-              border: 1px solid #ccc;
-              border-radius: 5px;
-              height: 80%; /* 80% of the chat container height */
-            }
-        
-            /* Styles for the user input */
-            #instructions {
-              width: 100%;
-              margin-bottom: 10px;
-              padding: 5px;
-              border: 1px solid #ccc;
-              border-radius: 3px;
-              height: 20%; /* 20% of the chat container height */
-            }
-        
-            /* Styles for the submit button */
-            #submit-btn {
-              display: block;
-              width: 100%;
-              padding: 8px;
-              background-color: #4caf50;
-              color: #fff;
-              border: none;
-              border-radius: 3px;
-              cursor: pointer;
-            }
-        
-            /* Styles for chat messages */
-            #chat-messages div {
-              margin-bottom: 5px;
-            }
-        
-            /* Customized styles for user and AI messages */
-            #chat-messages div:nth-child(odd) {
-              color: #0099ff; /* User message color */
-            }
-        
-            #chat-messages div:nth-child(even) {
-              color: #ff9900; /* AI message color */
-            }
-        
-            /* Styles for other API response */
-            #chat-messages div:last-child {
-              color: #555; /* Other API response color */
-            }
-          </style>
-        </head>
-        <body>
-          <div id="chat-container">
-            <div id="chat-messages"></div>
-            <textarea id="prediction-input" rows="1" placeholder="ai prediction"></textarea>
-            <textarea id="instructions" rows="10" maxlength="8000" placeholder="Command the AI"></textarea>
-            <textarea id="context-input" rows="10" maxlength="8000" placeholder="Enter context here"></textarea>
-            <textarea id="response-format" rows="10" maxlength="8000" placeholder="Enter response format here"></textarea>
-          </div>        
-          <script>
-            // Add your JavaScript code here
-            const chatContainer = document.getElementById('chat-container');
-            const chatMessages = document.getElementById('chat-messages');
-            const prediction = document.getElementById('prediction-input');
-            const userInput = document.getElementById('instructions');
-            const contextInput = document.getElementById('context-input');
-            const formatInput = document.getElementById('response-format');
-            // const submitBtn = document.getElementById('submit-btn');
-            // ChatGPT API configuration
-            const chatGptApiEndpoint = 'YOUR_CHATGPT_API_ENDPOINT';
-            const chatGptApiKey = 'YOUR_CHATGPT_API_KEY';
-            // Other API configuration
-            const otherApiEndpoint = 'OTHER_API_ENDPOINT';
-            const otherApiKey = 'OTHER_API_KEY';
-            const submitMessage = async function() {
-              const userInputValue = userInput.value;
-              displayMessage('User: ' + userInputValue);
-              const contextValue = contextInput.value;
-              displayMessage('Context: ' + contextValue);
-              const formatValue = formatInput.value;
-              displayMessage('Format: ' + formatValue);
-              const message = \`\${userInputValue}\n\${contextValue}\n\${formatValue}\n\`;          
-              // Send user message to ChatGPT API
-              const generatedCode = await sendMessageToChatGpt(message);
-              displayMessage('AI: ' + generatedCode);
-              // Access another API
-              const otherApiResponse = await accessOtherApi();
-              displayMessage('Other API Response: ' + JSON.stringify(otherApiResponse));
-              // Clear user input
-              userInput.value = '';
-              contextInput.value = '';
-              // response format stays
-            }
-            const Prompt = ${
-              this.methods.Prompt.toString()
-            }
-            const sendMessageToChatGpt = (message)=>{
-                Prompt('chat', message, 'gpt-3.5-turbo')
-            }
-            // Function to access another API
-            async function accessOtherApi() {
-              const response = await fetch(otherApiEndpoint, {
-                headers: {
-                  'Authorization': 'Bearer ' + otherApiKey
-                }
-              });
-              const data = await response.json();
-              return data; // Modify this based on the response format from the other API
-            }
-            // Function to display a message in the chat
-            function displayMessage(message) {
-              const messageElement = document.createElement('div');
-              messageElement.textContent = message;
-              chatMessages.appendChild(messageElement);
-            }
-            // Event listener for submit button click
-            // submitBtn.addEventListener('click', submitMessage);
-            
-            // Function to adjust the row size of the user input textarea
-            function adjustUserInputRows() {
-              const lines = userInput.value.split('\\n');
-              userInput.rows = Math.min(lines.length, 10);
-            }
-            // Event listener for user input changes
-            userInput.addEventListener('input', adjustUserInputRows);
-            
-            // Event listener for user input changes
-            userInput.addEventListener('keydown', function(event) {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault(); // Prevent the textarea from inserting a new line
-                submitMessage();
-              }
-            });
-            let timerId;
-
-            function startGhostWriting() {
-                timerId = setInterval(ghostWrite, 9000); // Run ghostWrite every 5 seconds
-            }
-
-            function stopGhostWriting() {
-                clearInterval(timerId); // Stop the ghostwriting interval
-            }
-
-            function ghostWrite() {
-            // This is the ghostwriting logic
-            // Replace this with your desired ghostwriting behavior
-            console.log("Ghostwriting...");
-            }
-
-            // Start ghostwriting when the user is inactive
-            let inactiveTime = 0;
-            const inactivityThreshold = 9000; // 9 seconds of inactivity
-
-            function resetTimer() {
-                clearTimeout(timerId);
-                inactiveTime = 0;
-                timerId = setTimeout(()=>{
-                    startGhostWriting();
-                    predictNextWords(7);
-                }, inactivityThreshold);
-            }
-
-            // Event listeners to detect user activity
-            document.addEventListener("mousemove", resetTimer);
-            document.addEventListener("keydown", resetTimer);
-            document.addEventListener("scroll", resetTimer);
-
-            // Start the initial timer
-            timerId = setTimeout(startGhostWriting, inactivityThreshold);
-
-            async function predictNextWords(numWords) {
-                const instructions = "predict the next " + numWords + " words.";
-                const prediction = await Prompt(instructions);
-                let answer = prompt("Are you okay with these predicted words? (yes / no): " + prediction);
-                if (answer === "yes") {
-                    out += answer;
-                    // then place words in predictions input
-                    userInput.value += prediction;
-                }
-            }
-            // Event listener for user input changes
-            [userInput, contextInput, formatInput].forEach((element)=>{
-                element.addEventListener('keydown', function(event) {
-                    if (event.key === 'Enter' && !event.shiftKey) {
-                        event.preventDefault(); // Prevent the textarea from inserting a new line
-                        submitMessage();
-                    }
-                });
-            });
-            </script>
+            <head>
+                <title>ChatGPT Web Component</title>
+                ${this.chat_styleV0()}
+            </head>
+            <body>
+                <div id="chat-container">
+                    <div id="chat-messages"></div>
+                    <textarea id="prediction-input" rows="1" placeholder="ai prediction"></textarea>
+                    <textarea id="instructions" rows="10" maxlength="8000" placeholder="Command the AI"></textarea>
+                    <textarea id="context-input" rows="10" maxlength="8000" placeholder="Enter context here"></textarea>
+                    <textarea id="response-format" rows="10" maxlength="8000" placeholder="Enter response format here"></textarea>
+                </div>
             </body>
+            ${this.chat_scriptV0()}
         </html>`;
     }
     router(z){
@@ -1554,11 +1581,21 @@ module.exports = class AI {
         }
     }
     server(){
-        const http = require('http');
-        const server = http.createServer(this.router({}));
-        server.listen(3000, () => {
-            console.log('http://localhost:3000');
-        });
+        require('http')
+            .createServer(this.router({}))
+            .listen(3000, () => {
+                console.log('http://localhost:3000');
+            });
+    }
+    db(){
+        // db in cloud (google, amazon, microsoft, apple)
+        // db in github.com
+
+        // browser db (localstorage, or save data in source code)
+        // nodejs (mongodb)
+    }
+    sync(){
+
     }
 }
 
@@ -1616,8 +1653,6 @@ const Task = class Task {
         this.javascript = javascript;
     }
 }
-
-
 function parseDepartment(inputText) {
     const regex = /\d+\./g;
     const departments = inputText.split(regex).map(department => department.trim());
@@ -1807,33 +1842,11 @@ function createREADME(_this){
         ""
     );
 }
-
 function log(path, message){
     console.log(message);
     require("fs").writeFileSync(path, message);
 }
-
-
-// main();
-
-
-// function main() {
-
-//     let hive = new Hive();
-
-//     hive.parse();
-//     hive.populate();
-
-// }
-
-
-
-
-
-if (module) {
-    console.log("returning the module AI.")
-    const AI = require('./AI.js'); // Assuming the AI module is in a file named AI.js
-    const ai = new AI({});
-    // ai.ui();
-}
+console.log("returning the module AI.")
+const ai = new AI({})
+if (module) module.exports = AI;
 `)</script>`;
